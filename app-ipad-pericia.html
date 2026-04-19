@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Perícia">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<title>Perícia — Diligência</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c25;
+    --bg3: #1f2433;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --text3: #555a6a;
+    --accent: #3b82f6;
+    --accent2: #1d4ed8;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --teal: #14b8a6;
+    --purple: #8b5cf6;
+    --r: 10px;
+    --r2: 6px;
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px;
+  }
+  .topbar-title { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--text2); text-transform: uppercase; }
+  .sync-badge {
+    font-size: 11px; font-family: var(--mono); padding: 3px 10px;
+    border-radius: 20px; font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .sync-badge.offline { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+  .sync-badge.online  { background: rgba(34,197,94,0.12);  color: var(--green);  border: 1px solid rgba(34,197,94,0.25); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; }
+  .card-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px 20px; border-radius: var(--r2); font-family: var(--font);
+    font-size: 14px; font-weight: 500; cursor: pointer; border: none;
+    transition: all 0.15s; user-select: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:active { background: var(--accent2); transform: scale(0.98); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:active { background: var(--bg3); }
+  .btn-danger { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .btn-success { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .btn-full { width: 100%; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+  /* ── INPUTS ── */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; letter-spacing: 0.04em; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--r2); color: var(--text); font-family: var(--font);
+    font-size: 14px; padding: 10px 12px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field select option { background: var(--bg3); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── PROCESSO CARD ── */
+  .processo-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .processo-card:active, .processo-card:hover { border-color: var(--border2); background: var(--bg3); }
+  .processo-hora {
+    font-family: var(--mono); font-size: 18px; font-weight: 500;
+    color: var(--accent); min-width: 60px; text-align: center;
+    background: rgba(59,130,246,0.08); padding: 8px 10px; border-radius: var(--r2);
+  }
+  .processo-info { flex: 1; }
+  .processo-numero { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-bottom: 2px; }
+  .processo-reclamante { font-size: 15px; font-weight: 600; color: var(--text); }
+  .processo-reclamada { font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+  .processo-local { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .status-dot.pendente { background: var(--text3); }
+  .status-dot.em-andamento { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .status-dot.concluido { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  /* ── STEP INDICATOR ── */
+  .steps {
+    display: flex; gap: 4px; margin-bottom: 20px;
+  }
+  .step-item {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .step-item.done { background: var(--green); }
+  .step-item.active { background: var(--accent); }
+
+  .step-label {
+    font-size: 11px; color: var(--text3); text-align: center;
+    margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .step-label span { color: var(--accent); font-weight: 600; }
+
+  /* ── SECTION DIVIDER ── */
+  .divider { 
+    display: flex; align-items: center; gap: 10px;
+    margin: 20px 0 16px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── PARTE ROW ── */
+  .parte-row {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--r2); padding: 12px 14px; margin-bottom: 8px;
+    position: relative;
+  }
+  .parte-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .parte-row-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
+  .remove-btn {
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-size: 18px; padding: 0 4px; line-height: 1;
+    transition: color 0.15s;
+  }
+  .remove-btn:active { color: var(--red); }
+
+  /* ── AGENTES ── */
+  .grupo-agentes { margin-bottom: 18px; }
+  .grupo-title {
+    font-size: 11px; font-weight: 600; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 6px 0 8px; border-bottom: 1px solid var(--border);
+    margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .grupo-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500;
+  }
+  .badge-fisico  { background: rgba(59,130,246,0.12);  color: var(--accent); }
+  .badge-quimico { background: rgba(245,158,11,0.12);  color: var(--amber); }
+  .badge-bio     { background: rgba(34,197,94,0.12);   color: var(--green); }
+  .badge-peri    { background: rgba(239,68,68,0.12);   color: var(--red); }
+
+  .agente-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 12px; border-radius: var(--r2);
+    margin-bottom: 4px; cursor: pointer;
+    transition: background 0.12s;
+    background: var(--bg3);
+    border: 1px solid transparent;
+  }
+  .agente-item:active { background: var(--bg2); }
+  .agente-item.selected { 
+    background: rgba(59,130,246,0.08); 
+    border-color: rgba(59,130,246,0.25);
+  }
+  .agente-item.selected .agente-nome { color: var(--text); }
+  .checkbox-custom {
+    width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0;
+    border: 1.5px solid var(--border2); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .agente-item.selected .checkbox-custom {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .checkbox-check { display: none; font-size: 11px; color: white; font-weight: 700; }
+  .agente-item.selected .checkbox-check { display: block; }
+  .agente-nome { font-size: 13px; color: var(--text2); flex: 1; }
+  .agente-anexo { font-size: 10px; font-family: var(--mono); color: var(--text3); }
+
+  /* ── SELECIONADOS PILL ── */
+  .selecionados-count {
+    font-size: 12px; color: var(--accent); 
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.2);
+    padding: 4px 12px; border-radius: 20px;
+    margin-bottom: 14px; text-align: center;
+    display: none;
+  }
+  .selecionados-count.show { display: block; }
+
+  /* ── IMPORT AREA ── */
+  .import-area {
+    border: 2px dashed var(--border2);
+    border-radius: var(--r);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .import-area:hover { border-color: var(--accent); background: rgba(59,130,246,0.04); }
+  .import-icon { font-size: 40px; margin-bottom: 12px; }
+  .import-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .import-sub { font-size: 13px; color: var(--text2); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--r); padding: 12px 20px;
+    font-size: 13px; color: var(--text); 
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: transform 0.3s; z-index: 9999;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── NAV BOTTOM ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(15,17,23,0.96); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    display: flex; padding: 8px 20px 16px;
+    gap: 10px; max-width: 800px; margin: 0 auto;
+  }
+  .page-pad { padding-bottom: 90px; }
+
+  /* ── HEADER PROCESSO ── */
+  .processo-header {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 16px 18px; margin-bottom: 20px;
+  }
+  .processo-header-num { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .processo-header-nome { font-size: 18px; font-weight: 600; margin: 4px 0; }
+  .processo-header-meta { font-size: 13px; color: var(--text2); }
+  .meta-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; }
+  .meta-item { font-size: 12px; }
+  .meta-label { color: var(--text3); }
+  .meta-val { color: var(--text2); font-family: var(--mono); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-size: 16px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; }
+
+  /* ── OCORRENCIA ── */
+  .ocorrencia-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; cursor: pointer; border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .ocorrencia-label { font-size: 14px; font-weight: 500; }
+  .toggle-switch {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    position: relative; transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--amber); border-color: var(--amber); }
+  .toggle-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text2); transition: all 0.2s;
+  }
+  .toggle-switch.on .toggle-knob { left: 20px; background: white; }
+
+  .loading-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(15,17,23,0.85); z-index: 9998;
+    align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 36px; height: 36px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span class="topbar-title">⚖ Perícia</span>
+  <div class="sync-badge offline" id="sync-badge">
+    <div class="sync-dot"></div>
+    <span id="sync-text">Offline</span>
+  </div>
+</div>
+
+<!-- BANNER DE INSTALAÇÃO PWA (aparece só no Safari, só na primeira vez) -->
+<div id="pwa-banner" style="display:none; background:rgba(59,130,246,0.12); border-bottom:1px solid rgba(59,130,246,0.25); padding:10px 20px; font-size:12px; color:#60a5fa; display:flex; align-items:center; gap:10px;">
+  <span style="font-size:18px;">📲</span>
+  <span style="flex:1;">Para usar offline: toque em <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b></span>
+  <button onclick="document.getElementById('pwa-banner').style.display='none'; localStorage.setItem('pwa_banner_fechado','1');" style="background:none;border:none;color:#60a5fa;font-size:18px;cursor:pointer;padding:0;">×</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — LISTA DE PERÍCIAS DO DIA
+══════════════════════════════════════════ -->
+<div class="screen active page-pad" id="screen-lista">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div>
+      <div style="font-size:22px; font-weight:600;">Perícias do dia</div>
+      <div style="font-size:13px; color:var(--text2); margin-top:2px;" id="data-hoje"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="showImport()">＋ Importar</button>
+  </div>
+
+  <div id="lista-pericias">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Nenhuma perícia importada</div>
+      <div class="empty-sub">Importe a planilha do dia para começar</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — IMPORTAR PLANILHA
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-import">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+    <button class="btn btn-ghost btn-sm" onclick="goTo('screen-lista')">← Voltar</button>
+    <div style="font-size:18px; font-weight:600;">Importar planilha</div>
+  </div>
+
+  <div class="import-area" onclick="document.getElementById('file-input').click()">
+    <div class="import-icon">📊</div>
+    <div class="import-title">Selecionar arquivo Excel</div>
+    <div class="import-sub">Arquivo .xlsx exportado do sistema de gestão</div>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="importarPlanilha(this)">
+
+  <div id="preview-import" style="display:none; margin-top:20px;">
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">Prévia</div><div class="divider-line"></div></div>
+    <div id="preview-content"></div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-primary btn-full" onclick="confirmarImport()">✓ Importar perícias</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — DILIGÊNCIA (passos)
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-diligencia">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+    <button class="btn btn-ghost btn-sm" onclick="voltarLista()">← Lista</button>
+    <div style="font-size:16px; font-weight:600;">Diligência</div>
+  </div>
+
+  <!-- Processo header -->
+  <div class="processo-header" id="proc-header"></div>
+
+  <!-- Steps -->
+  <div class="steps" id="steps-bar">
+    <div class="step-item active" id="step-0"></div>
+    <div class="step-item" id="step-1"></div>
+    <div class="step-item" id="step-2"></div>
+    <div class="step-item" id="step-3"></div>
+    <div class="step-item" id="step-4"></div>
+  </div>
+  <div class="step-label" id="step-label"></div>
+
+  <!-- STEP 0 — Partes presentes -->
+  <div id="passo-0" class="page-pad">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Pela Reclamante</div><div class="card-sub">Pessoas presentes em nome do autor</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="addParte('reclamante')">+ Adicionar</button>
+      </div>
+      <div id="partes-reclamante"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Pela Reclamada</div><div class="card-sub">Pessoas presentes em nome da empresa</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="addParte('reclamada')">+ Adicionar</button>
+      </div>
+      <div id="partes-reclamada"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Ocorrências</div></div>
+      <div class="ocorrencia-toggle" onclick="toggleOcorrencia()">
+        <span class="ocorrencia-label">Houve ocorrências durante a diligência?</span>
+        <div class="toggle-switch" id="ocorrencia-switch"><div class="toggle-knob"></div></div>
+      </div>
+      <div id="ocorrencia-field" style="display:none;">
+        <div class="field">
+          <label>Descreva as ocorrências</label>
+          <textarea id="txt-ocorrencia" placeholder="Ex.: Reclamada negou acesso ao setor de produção..."></textarea>
+        </div>
+      </div>
+      <div id="ocorrencia-none" style="font-size:13px; color:var(--text3);">Sem ocorrências — texto padrão será inserido.</div>
+    </div>
+  </div>
+
+  <!-- STEP 1 — Dados funcionais -->
+  <div id="passo-1" style="display:none;" class="page-pad">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">Dados funcionais do reclamante</div>
+
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">Pela Reclamante</div><div class="divider-line"></div></div>
+      <div class="field-row">
+        <div class="field"><label>Função declarada</label><input type="text" id="func-reclamante" placeholder="Ex.: Auxiliar de produção"></div>
+        <div class="field"><label>Admissão (autor)</label><input type="date" id="admissao-reclamante"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Demissão (autor)</label><input type="date" id="demissao-reclamante"></div>
+        <div class="field"><label>Autuação do processo</label><input type="date" id="autuacao-proc" readonly style="opacity:0.6;"></div>
+      </div>
+      <div class="field" id="prescricao-alert" style="display:none;">
+        <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:var(--r2); padding:10px 12px; font-size:12px; color:var(--amber);">
+          ⚠ Verificar prescrição: período anterior a <span id="prescricao-data"></span>
+        </div>
+      </div>
+
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">Pela Reclamada</div><div class="divider-line"></div></div>
+      <div class="field-row">
+        <div class="field"><label>Função (reclamada)</label><input type="text" id="func-reclamada" placeholder="Ex.: Operador"></div>
+        <div class="field"><label>Admissão (reclamada)</label><input type="date" id="admissao-reclamada"></div>
+      </div>
+      <div class="field"><label>Demissão (reclamada)</label><input type="date" id="demissao-reclamada"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 — Atividades -->
+  <div id="passo-2" style="display:none;" class="page-pad">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">Atividades exercidas pelo autor</div>
+      <div class="field">
+        <label>Pelo autor (reclamante)</label>
+        <textarea id="ativ-autor" rows="5" placeholder="Descreva as atividades informadas pelo reclamante durante a entrevista..."></textarea>
+      </div>
+      <div class="field">
+        <label>Pela empresa (reclamada)</label>
+        <textarea id="ativ-empresa" rows="4" placeholder="Descreva as atividades informadas pela empresa..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">EPIs e treinamentos</div>
+      <div class="field">
+        <label>EPIs declarados (informação verbal)</label>
+        <textarea id="epis-declarados" rows="3" placeholder="Ex.: Protetor auricular, luvas de nitrila, capacete..."></textarea>
+      </div>
+      <div class="field">
+        <label>Treinamentos realizados</label>
+        <textarea id="treinamentos" rows="3" placeholder="Ex.: NR-10, NR-35, CIPA..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 — Agentes ambientais -->
+  <div id="passo-3" style="display:none;" class="page-pad">
+    <div style="font-size:14px; color:var(--text2); margin-bottom:14px;">
+      Selecione os agentes identificados na inspeção do local de trabalho:
+    </div>
+    <div class="selecionados-count" id="agentes-count"></div>
+    <div id="lista-agentes"></div>
+  </div>
+
+  <!-- STEP 4 — Revisão e salvar -->
+  <div id="passo-4" style="display:none;" class="page-pad">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">Resumo da diligência</div>
+      <div id="resumo-diligencia" style="font-size:13px; color:var(--text2); line-height:1.8;"></div>
+    </div>
+    <button class="btn btn-success btn-full" style="margin-top:6px;" onclick="salvarDiligencia()">
+      ✓ Salvar diligência
+    </button>
+  </div>
+
+  <!-- Navegação entre passos -->
+  <div class="bottom-nav">
+    <button class="btn btn-ghost" id="btn-prev" onclick="prevStep()" style="display:none;">← Anterior</button>
+    <button class="btn btn-primary btn-full" id="btn-next" onclick="nextStep()">Próximo →</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px; color:var(--text2);">Processando...</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// DADOS — IndexedDB para persistência offline
+// ═══════════════════════════════════════════
+const DB_NAME = 'pericia_db';
+const DB_VERSION = 1;
+let db = null;
+
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('pericias')) {
+        d.createObjectStore('pericias', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('diligencias')) {
+        d.createObjectStore('diligencias', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbSave(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(data);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ═══════════════════════════════════════════
+// AGENTES — organizados por Anexo (NR-15 e NR-16)
+// ═══════════════════════════════════════════
+const AGENTES = [
+  {
+    id: "nr15-a1",
+    anexo: "Anexo 1",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Ruído contínuo ou intermitente",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a2",
+    anexo: "Anexo 2",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Ruído de impacto",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a3",
+    anexo: "Anexo 3",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Calor",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a5",
+    anexo: "Anexo 5",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Radiações ionizantes",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a6",
+    anexo: "Anexo 6",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Pressões hiperbáricas",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a7",
+    anexo: "Anexo 7",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Radiações não ionizantes",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a8",
+    anexo: "Anexo 8",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Vibrações",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a9",
+    anexo: "Anexo 9",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Frio",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a10",
+    anexo: "Anexo 10",
+    nr: "NR-15",
+    tipo: "Físico",
+    nome: "Umidade",
+    classe: "badge-fisico",
+  },
+  {
+    id: "nr15-a11",
+    anexo: "Anexo 11",
+    nr: "NR-15",
+    tipo: "Químico",
+    nome: "Agentes químicos — limites de tolerância (líquidos e gasosos)",
+    classe: "badge-quimico",
+  },
+  {
+    id: "nr15-a12",
+    anexo: "Anexo 12",
+    nr: "NR-15",
+    tipo: "Químico",
+    nome: "Poeiras minerais (sílica, carvão, amianto/asbesto)",
+    classe: "badge-quimico",
+  },
+  {
+    id: "nr15-a13",
+    anexo: "Anexo 13",
+    nr: "NR-15",
+    tipo: "Químico",
+    nome: "Agentes químicos — insalubridade por atividade",
+    classe: "badge-quimico",
+  },
+  {
+    id: "nr15-a13a",
+    anexo: "Anexo 13-A",
+    nr: "NR-15",
+    tipo: "Químico",
+    nome: "Benzeno e compostos",
+    classe: "badge-quimico",
+  },
+  {
+    id: "nr15-a14",
+    anexo: "Anexo 14",
+    nr: "NR-15",
+    tipo: "Biológico",
+    nome: "Agentes biológicos — insalubridade por atividade",
+    classe: "badge-bio",
+  },
+  {
+    id: "nr16-a1",
+    anexo: "Anexo 1",
+    nr: "NR-16",
+    tipo: "Periculosidade",
+    nome: "Explosivos",
+    classe: "badge-peri",
+  },
+  {
+    id: "nr16-a2",
+    anexo: "Anexo 2",
+    nr: "NR-16",
+    tipo: "Periculosidade",
+    nome: "Inflamáveis e líquidos combustíveis",
+    classe: "badge-peri",
+  },
+  {
+    id: "nr16-a3a",
+    anexo: "Anexo 3",
+    nr: "NR-16",
+    tipo: "Periculosidade",
+    nome: "Energia elétrica",
+    classe: "badge-peri",
+  },
+  {
+    id: "nr16-a3b",
+    anexo: "Anexo 3",
+    nr: "NR-16",
+    tipo: "Periculosidade",
+    nome: "Radiações ionizantes / substâncias radioativas",
+    classe: "badge-peri",
+  },
+  {
+    id: "nr16-a3c",
+    anexo: "Anexo 3",
+    nr: "NR-16",
+    tipo: "Periculosidade",
+    nome: "Roubos e violências físicas (segurança pessoal)",
+    classe: "badge-peri",
+  },
+  {
+    id: "nr16-a5",
+    anexo: "Anexo 5",
+    nr: "NR-16",
+    tipo: "Periculosidade",
+    nome: "Motocicleta em atividade profissional",
+    classe: "badge-peri",
+  },
+];
+
+// ═══════════════════════════════════════════
+// ESTADO DA APLICAÇÃO
+// ═══════════════════════════════════════════
+let pericias = [];
+let pericias_importadas = [];
+let processoAtual = null;
+let currentStep = 0;
+const NUM_STEPS = 5;
+let partesReclamante = [];
+let partesReclamada = [];
+let agentesSelec = new Set();
+let ocorrenciaAtiva = false;
+
+const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','Agentes ambientais','Revisar e salvar'];
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+async function init() {
+  await initDB();
+  pericias = await dbGetAll('pericias');
+  renderLista();
+  document.getElementById('data-hoje').textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  watchOnline();
+  renderAgentes();
+}
+
+function watchOnline() {
+  function update() {
+    const on = navigator.onLine;
+    const b = document.getElementById('sync-badge');
+    const t = document.getElementById('sync-text');
+    b.className = 'sync-badge ' + (on ? 'online' : 'offline');
+    t.textContent = on ? 'Online' : 'Offline';
+    if (on) syncToCloud();
+  }
+  window.addEventListener('online', update);
+  window.addEventListener('offline', update);
+  update();
+}
+
+// ═══════════════════════════════════════════
+// TELA — navegação
+// ═══════════════════════════════════════════
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screen).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showImport() { goTo('screen-import'); }
+
+function voltarLista() {
+  if (confirm('Sair da diligência? Dados não salvos serão perdidos.')) goTo('screen-lista');
+}
+
+// ═══════════════════════════════════════════
+// LISTA DE PERÍCIAS
+// ═══════════════════════════════════════════
+function renderLista() {
+  const el = document.getElementById('lista-pericias');
+  if (!pericias.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma perícia importada</div><div class="empty-sub">Importe a planilha do dia para começar</div></div>`;
+    return;
+  }
+  const sorted = [...pericias].sort((a,b) => (a.horario||'').localeCompare(b.horario||''));
+  el.innerHTML = sorted.map(p => {
+    const status = p.diligencia_salva ? 'concluido' : 'pendente';
+    const statusLabel = p.diligencia_salva ? '✓ Concluída' : 'Pendente';
+    return `
+    <div class="processo-card" onclick="abrirDiligencia('${p.id}')">
+      <div class="processo-hora">${p.horario || '--:--'}</div>
+      <div class="processo-info">
+        <div class="processo-numero">${p.numero || ''}</div>
+        <div class="processo-reclamante">${p.reclamante || '—'}</div>
+        <div class="processo-reclamada">${p.reclamada || '—'}</div>
+        <div class="processo-local">📍 ${p.cidade || ''} — ${(p.endereco||'').substring(0,60)}${(p.endereco||'').length>60?'...':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div class="status-dot ${status}" title="${statusLabel}"></div>
+        <div style="font-size:10px;color:var(--text3);">${statusLabel}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// IMPORTAR PLANILHA
+// ═══════════════════════════════════════════
+function importarPlanilha(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showLoading();
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type:'binary', cellDates:true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { defval:'' });
+      
+      pericias_importadas = data.map((row, i) => {
+        const horario = formatHora(row['Horário'] || row['Horario'] || '');
+        return {
+          id: gerarUUID(),
+          numero: String(row['Nº Processo'] || row['Nº Proc'] || row['Processo'] || '').trim(),
+          reclamante: String(row['Reclamante'] || '').trim(),
+          reclamada: String(row['Reclamada'] || '').trim(),
+          vara: String(row['Nº Vara'] || row['Vara'] || '').trim(),
+          cidade: String(row['Cidade'] || '').trim(),
+          endereco: String(row['Endereço'] || row['Endereco'] || '').trim(),
+          data_pericia: formatData(row['Data Perícia'] || row['Data Pericia'] || ''),
+          horario: horario,
+          admissao: formatData(row['Data Admissão'] || row['Data Admissao'] || ''),
+          demissao: formatData(row['Data Demissão'] || row['Data Demissao'] || ''),
+          autuacao: formatData(row['Data Autuação'] || row['Data Autuacao'] || ''),
+          funcao: String(row['Função'] || row['Funcao'] || '').trim(),
+          objeto: detectarObjeto(row['NR15'] || '', row['NR16'] || ''),
+          nr15: String(row['NR15'] || row['NR-15'] || '').trim(),
+          nr16: String(row['NR16'] || row['NR-16'] || '').trim(),
+          diligencia_salva: false,
+          importado_em: new Date().toISOString(),
+        };
+      }).filter(p => p.numero || p.reclamante);
+
+      hideLoading();
+      if (!pericias_importadas.length) { toast('Nenhum processo encontrado na planilha.'); return; }
+
+      // Preview
+      document.getElementById('preview-import').style.display = 'block';
+      document.getElementById('preview-content').innerHTML = pericias_importadas.map(p => `
+        <div class="processo-card" style="cursor:default;margin-bottom:8px;">
+          <div class="processo-hora">${p.horario || '--:--'}</div>
+          <div class="processo-info">
+            <div class="processo-numero">${p.numero}</div>
+            <div class="processo-reclamante">${p.reclamante}</div>
+            <div class="processo-reclamada">${p.reclamada}</div>
+          </div>
+        </div>`).join('');
+    } catch(err) {
+      hideLoading();
+      toast('Erro ao ler o arquivo: ' + err.message);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+async function confirmarImport() {
+  showLoading();
+  for (const p of pericias_importadas) await dbSave('pericias', p);
+  pericias = await dbGetAll('pericias');
+  hideLoading();
+  pericias_importadas = [];
+  document.getElementById('preview-import').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  renderLista();
+  goTo('screen-lista');
+  toast(`✓ ${pericias.length} perícias importadas`);
+}
+
+// ═══════════════════════════════════════════
+// DILIGÊNCIA — abrir processo
+// ═══════════════════════════════════════════
+function abrirDiligencia(id) {
+  processoAtual = pericias.find(p => p.id === id);
+  if (!processoAtual) return;
+
+  partesReclamante = [];
+  partesReclamada = [];
+  agentesSelec = new Set();
+  currentStep = 0;
+  ocorrenciaAtiva = false;
+
+  // Preenche header
+  document.getElementById('proc-header').innerHTML = `
+    <div class="processo-header-num">${processoAtual.numero}</div>
+    <div class="processo-header-nome">${processoAtual.reclamante}</div>
+    <div class="processo-header-meta">${processoAtual.reclamada}</div>
+    <div class="meta-row">
+      <div class="meta-item"><span class="meta-label">Data: </span><span class="meta-val">${processoAtual.data_pericia||'—'}</span></div>
+      <div class="meta-item"><span class="meta-label">Hora: </span><span class="meta-val">${processoAtual.horario||'—'}</span></div>
+      <div class="meta-item"><span class="meta-label">Vara: </span><span class="meta-val">${processoAtual.vara||'—'}</span></div>
+    </div>
+    <div style="margin-top:8px; font-size:12px; color:var(--text3);">📍 ${processoAtual.endereco||'—'}</div>
+  `;
+
+  // Preenche dados funcionais com dados da planilha
+  document.getElementById('admissao-reclamante').value = processoAtual.admissao || '';
+  document.getElementById('demissao-reclamante').value = processoAtual.demissao || '';
+  document.getElementById('autuacao-proc').value = processoAtual.autuacao || '';
+  document.getElementById('func-reclamante').value = processoAtual.funcao || '';
+  calcPrescricao();
+
+  // Adiciona um campo vazio de reclamante por padrão
+  addParte('reclamante');
+
+  renderPartes();
+  updateStep();
+  goTo('screen-diligencia');
+}
+
+// ═══════════════════════════════════════════
+// PARTES PRESENTES
+// ═══════════════════════════════════════════
+function addParte(tipo) {
+  const arr = tipo === 'reclamante' ? partesReclamante : partesReclamada;
+  arr.push({ nome:'', mister:'', documento:'', admissao:'' });
+  renderPartes();
+}
+
+function renderPartes() {
+  renderPartesEl('reclamante', partesReclamante);
+  renderPartesEl('reclamada', partesReclamada);
+}
+
+function renderPartesEl(tipo, arr) {
+  const el = document.getElementById('partes-' + tipo);
+  if (!arr.length) {
+    el.innerHTML = `<div style="font-size:13px;color:var(--text3);padding:8px 0;">Nenhuma parte adicionada</div>`;
+    return;
+  }
+  el.innerHTML = arr.map((p, i) => `
+    <div class="parte-row">
+      <div class="parte-row-header">
+        <span class="parte-row-label">${tipo === 'reclamante' ? 'Reclamante' : 'Empresa'} ${i+1}</span>
+        <button class="remove-btn" onclick="removeParte('${tipo}', ${i})">×</button>
+      </div>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:8px;"><label>Nome</label><input type="text" value="${p.nome}" oninput="updateParte('${tipo}',${i},'nome',this.value)" placeholder="Nome completo"></div>
+        <div class="field" style="margin-bottom:8px;"><label>Função / Qualidade</label><input type="text" value="${p.mister}" oninput="updateParte('${tipo}',${i},'mister',this.value)" placeholder="Ex.: Encarregado"></div>
+      </div>
+      ${tipo==='reclamada' ? `<div class="field-row"><div class="field" style="margin-bottom:4px;"><label>Admissão</label><input type="month" value="${p.admissao}" oninput="updateParte('${tipo}',${i},'admissao',this.value)"></div><div class="field" style="margin-bottom:4px;"><label>Documento</label><input type="text" value="${p.documento}" oninput="updateParte('${tipo}',${i},'documento',this.value)" placeholder="RG / CPF"></div></div>` : ''}
+    </div>`).join('');
+}
+
+function updateParte(tipo, i, campo, val) {
+  const arr = tipo === 'reclamante' ? partesReclamante : partesReclamada;
+  arr[i][campo] = val;
+}
+
+function removeParte(tipo, i) {
+  const arr = tipo === 'reclamante' ? partesReclamante : partesReclamada;
+  arr.splice(i, 1);
+  renderPartes();
+}
+
+function toggleOcorrencia() {
+  ocorrenciaAtiva = !ocorrenciaAtiva;
+  document.getElementById('ocorrencia-switch').className = 'toggle-switch ' + (ocorrenciaAtiva ? 'on' : '');
+  document.getElementById('ocorrencia-field').style.display = ocorrenciaAtiva ? 'block' : 'none';
+  document.getElementById('ocorrencia-none').style.display = ocorrenciaAtiva ? 'none' : 'block';
+}
+
+// ═══════════════════════════════════════════
+// PRESCRIÇÃO
+// ═══════════════════════════════════════════
+function calcPrescricao() {
+  const autuacao = document.getElementById('autuacao-proc').value;
+  if (!autuacao) return;
+  const d = new Date(autuacao);
+  d.setFullYear(d.getFullYear() - 5);
+  const str = d.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+  document.getElementById('prescricao-data').textContent = str;
+  document.getElementById('prescricao-alert').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════
+// AGENTES — renderiza agrupado por NR (NR-15 antes, NR-16 depois)
+// dentro de cada NR, lista em ordem de anexo
+// ═══════════════════════════════════════════
+function renderAgentes() {
+  const el = document.getElementById('lista-agentes');
+
+  // Separa NR-15 e NR-16
+  const nr15 = AGENTES.filter(a => a.nr === 'NR-15');
+  const nr16 = AGENTES.filter(a => a.nr === 'NR-16');
+
+  const badgeClasse = { 'Físico':'badge-fisico', 'Químico':'badge-quimico', 'Biológico':'badge-bio', 'Periculosidade':'badge-peri' };
+  const tipoCor    = { 'Físico':'var(--accent)', 'Químico':'var(--amber)', 'Biológico':'var(--green)', 'Periculosidade':'var(--red)' };
+
+  function renderSecao(lista, titulo, corTitulo) {
+    if (!lista.length) return '';
+    return `
+      <div style="margin-bottom:24px;">
+        <div style="font-size:12px; font-weight:600; color:${corTitulo}; text-transform:uppercase;
+          letter-spacing:0.1em; padding:8px 0 10px; border-bottom:1px solid var(--border);
+          margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+          ${titulo}
+          <span style="font-size:10px; background:rgba(255,255,255,0.06); border:1px solid var(--border2);
+            padding:2px 8px; border-radius:10px; color:var(--text3); font-weight:500;">${lista.length} agentes</span>
+        </div>
+        ${lista.map(ag => `
+          <div class="agente-item ${agentesSelec.has(ag.id)?'selected':''}" id="ag-${ag.id}" onclick="toggleAgente('${ag.id}')">
+            <div class="checkbox-custom"><span class="checkbox-check">✓</span></div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:11px; font-family:var(--mono); color:${tipoCor[ag.tipo]||'var(--text3)'}; margin-bottom:2px;">${ag.anexo} · ${ag.tipo}</div>
+              <div class="agente-nome" style="font-size:14px;">${ag.nome}</div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  el.innerHTML =
+    renderSecao(nr15, 'NR-15 — Insalubridade', 'var(--accent)') +
+    renderSecao(nr16, 'NR-16 — Periculosidade', 'var(--red)');
+}
+
+function toggleAgente(id) {
+  if (agentesSelec.has(id)) agentesSelec.delete(id);
+  else agentesSelec.add(id);
+  const el = document.getElementById('ag-' + id);
+  if (el) el.className = 'agente-item ' + (agentesSelec.has(id) ? 'selected' : '');
+  const count = agentesSelec.size;
+  const c = document.getElementById('agentes-count');
+  if (count > 0) {
+    c.textContent = `${count} agente${count>1?'s':''} selecionado${count>1?'s':''}`;
+    c.className = 'selecionados-count show';
+  } else {
+    c.className = 'selecionados-count';
+  }
+}
+
+// ═══════════════════════════════════════════
+// STEPS — navegação
+// ═══════════════════════════════════════════
+function updateStep() {
+  for (let i = 0; i < NUM_STEPS; i++) {
+    const el = document.getElementById('step-' + i);
+    if (!el) continue;
+    el.className = 'step-item ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '');
+  }
+  document.getElementById('step-label').innerHTML = `Passo <span>${currentStep+1}/${NUM_STEPS}</span> — ${STEP_LABELS[currentStep]}`;
+
+  for (let i = 0; i < NUM_STEPS; i++) {
+    const el = document.getElementById('passo-' + i);
+    if (el) el.style.display = i === currentStep ? 'block' : 'none';
+  }
+
+  document.getElementById('btn-prev').style.display = currentStep > 0 ? 'inline-flex' : 'none';
+  document.getElementById('btn-next').style.display = currentStep < NUM_STEPS - 1 ? 'flex' : 'none';
+
+  if (currentStep === NUM_STEPS - 1) buildResumo();
+}
+
+function nextStep() {
+  if (currentStep < NUM_STEPS - 1) { currentStep++; updateStep(); window.scrollTo(0,0); }
+}
+function prevStep() {
+  if (currentStep > 0) { currentStep--; updateStep(); window.scrollTo(0,0); }
+}
+
+// ═══════════════════════════════════════════
+// RESUMO
+// ═══════════════════════════════════════════
+function buildResumo() {
+  const totalPartes = partesReclamante.length + partesReclamada.length;
+  const agNomes = [...agentesSelec].map(id => {
+    const ag = AGENTES.find(x => x.id === id);
+    return ag ? `${ag.anexo} (${ag.nr}) — ${ag.nome}` : id;
+  });
+
+  document.getElementById('resumo-diligencia').innerHTML = `
+    <div style="margin-bottom:12px;"><b style="color:var(--text)">Processo:</b> ${processoAtual.numero}</div>
+    <div style="margin-bottom:12px;"><b style="color:var(--text)">Partes presentes:</b> ${totalPartes} pessoa${totalPartes!==1?'s':''} (${partesReclamante.length} reclamante, ${partesReclamada.length} reclamada)</div>
+    <div style="margin-bottom:12px;"><b style="color:var(--text)">Ocorrências:</b> ${ocorrenciaAtiva ? 'Sim — ' + (document.getElementById('txt-ocorrencia').value||'sem descrição') : 'Não'}</div>
+    <div style="margin-bottom:12px;"><b style="color:var(--text)">Atividades:</b> ${document.getElementById('ativ-autor').value ? 'Preenchidas' : '⚠ Não preenchidas'}</div>
+    <div style="margin-bottom:12px;"><b style="color:var(--text)">Agentes identificados (${agentesSelec.size}):</b>
+      ${agNomes.length ? '<ul style="margin-top:6px;padding-left:18px;">' + agNomes.map(n=>`<li>${n}</li>`).join('') + '</ul>' : ' <span style="color:var(--text3)">Nenhum selecionado</span>'}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// SALVAR DILIGÊNCIA
+// ═══════════════════════════════════════════
+async function salvarDiligencia() {
+  showLoading();
+  const diligencia = {
+    id: gerarUUID(),
+    processo_id: processoAtual.id,
+    processo_numero: processoAtual.numero,
+    salvo_em: new Date().toISOString(),
+    partes_reclamante: partesReclamante,
+    partes_reclamada: partesReclamada,
+    ocorrencia: ocorrenciaAtiva,
+    ocorrencia_texto: ocorrenciaAtiva ? document.getElementById('txt-ocorrencia').value : '',
+    func_reclamante: document.getElementById('func-reclamante').value,
+    admissao_reclamante: document.getElementById('admissao-reclamante').value,
+    demissao_reclamante: document.getElementById('demissao-reclamante').value,
+    func_reclamada: document.getElementById('func-reclamada').value,
+    admissao_reclamada: document.getElementById('admissao-reclamada').value,
+    demissao_reclamada: document.getElementById('demissao-reclamada').value,
+    ativ_autor: document.getElementById('ativ-autor').value,
+    ativ_empresa: document.getElementById('ativ-empresa').value,
+    epis: document.getElementById('epis-declarados').value,
+    treinamentos: document.getElementById('treinamentos').value,
+    agentes: [...agentesSelec].map(id => {
+      const ag = AGENTES.find(x => x.id === id);
+      return ag ? { id: ag.id, nome: ag.nome, anexo: ag.anexo, nr: ag.nr, tipo: ag.tipo } : { id };
+    }),
+    sincronizado: false,
+  };
+
+  await dbSave('diligencias', diligencia);
+
+  // Atualiza status da perícia
+  processoAtual.diligencia_salva = true;
+  await dbSave('pericias', processoAtual);
+  pericias = await dbGetAll('pericias');
+
+  hideLoading();
+  toast('✓ Diligência salva com sucesso!');
+  setTimeout(() => { renderLista(); goTo('screen-lista'); }, 1200);
+
+  if (navigator.onLine) syncToCloud();
+}
+
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// SINCRONIZAÇÃO COM SUPABASE
+// ═══════════════════════════════════════════
+
+// Cliente Supabase inline (sem depender de arquivo externo no PWA offline)
+const SB_CONFIG = JSON.parse(localStorage.getItem('sb_config') || '{}');
+const SB_TOKEN  = localStorage.getItem('sb_token') || null;
+
+async function sbUpsert(table, row, onConflict = 'id') {
+  if (!SB_CONFIG.url || !SB_CONFIG.anon) return;
+  const token = localStorage.getItem('sb_token') || SB_CONFIG.anon;
+  try {
+    await fetch(`${SB_CONFIG.url}/rest/v1/${table}?on_conflict=${onConflict}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SB_CONFIG.anon,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=minimal,resolution=merge-duplicates',
+      },
+      body: JSON.stringify(row),
+    });
+  } catch(e) {
+    console.log('[Sync] Erro:', e.message);
+  }
+}
+
+async function syncToCloud() {
+  if (!navigator.onLine) return;
+  if (!SB_CONFIG.url || !SB_CONFIG.anon) {
+    console.log('[Sync] Supabase não configurado — salvo apenas localmente.');
+    return;
+  }
+
+  // Sincroniza processos e diligências não sincronizados
+  const dils = await dbGetAll('diligencias');
+  const procs = await dbGetAll('pericias');
+  const pending = dils.filter(d => !d.sincronizado);
+  if (!pending.length) return;
+
+  for (const dil of pending) {
+    // Upsert processo
+    const proc = procs.find(p => p.id === dil.processo_id);
+    if (proc) {
+      const { diligencia_salva, importado_em, ...procData } = proc;
+      await sbUpsert('processos', { ...procData, status: 'diligencia_realizada' }, 'id');
+    }
+    // Upsert diligência
+    const { sincronizado, ...dilData } = dil;
+    await sbUpsert('diligencias', {
+      ...dilData,
+      sincronizado_em: new Date().toISOString(),
+    }, 'processo_id');
+
+    // Marca como sincronizado localmente
+    dil.sincronizado = true;
+    await dbSave('diligencias', dil);
+  }
+
+  const badge = document.getElementById('sync-badge');
+  const txt   = document.getElementById('sync-text');
+  if (badge && txt) {
+    badge.className = 'sync-badge online';
+    txt.textContent = `Sincronizado (${pending.length})`;
+    setTimeout(() => { if (navigator.onLine) txt.textContent = 'Online'; }, 3000);
+  }
+  console.log(`[Sync] ${pending.length} diligência(s) sincronizada(s) com Supabase.`);
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function formatData(val) {
+  if (!val) return '';
+  if (val instanceof Date) return val.toISOString().split('T')[0];
+  const s = String(val).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [d,m,y] = s.split('/');
+    return `${y}-${m}-${d}`;
+  }
+  return s;
+}
+
+function formatHora(val) {
+  if (!val) return '';
+  if (val instanceof Date) return val.toTimeString().substring(0,5);
+  const s = String(val).trim();
+  if (/^\d{2}:\d{2}/.test(s)) return s.substring(0,5);
+  return s;
+}
+
+function detectarObjeto(nr15, nr16) {
+  const t15 = String(nr15).trim();
+  const t16 = String(nr16).trim();
+  if (t15 && t16 && t15 !== '-' && t16 !== '-') return 'insalubridade_periculosidade';
+  if (t16 && t16 !== '-') return 'periculosidade';
+  return 'insalubridade';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function showLoading() { document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+// ═══════════════════════════════════════════
+// UUID
+// ═══════════════════════════════════════════
+function gerarUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SERVICE WORKER — registro para PWA offline
+// ═══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    console.log('[PWA] Service Worker registrado:', reg.scope);
+  }).catch(err => {
+    console.log('[PWA] Service Worker falhou (normal em localhost):', err.message);
+  });
+}
+
+// Banner de instalação: mostra só no Safari iOS, só se não foi fechado antes,
+// e só se o app ainda não está instalado (standalone = já instalado)
+(function() {
+  const jaClosed   = localStorage.getItem('pwa_banner_fechado');
+  const standalone = window.navigator.standalone === true;
+  const isSafari   = /iP(ad|hone|od)/.test(navigator.userAgent) && !window.MSStream;
+  const banner     = document.getElementById('pwa-banner');
+  if (banner && isSafari && !standalone && !jaClosed) {
+    banner.style.display = 'flex';
+  }
+})();
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

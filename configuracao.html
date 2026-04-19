@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PeríciaLab — Configuração Supabase</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#0f1117;--bg2:#181c25;--bg3:#1f2433;--bg4:#252b3b;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--text2:#8b90a0;--text3:#50566a;
+  --accent:#3b82f6;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+  --r:10px;--r2:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:540px;max-width:100%;}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+.logo-icon{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo-name{font-size:20px;font-weight:600;}
+.logo-sub{font-size:12px;color:var(--text3);font-family:var(--mono);}
+.section{margin-bottom:24px;}
+.section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500;}
+.field input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--mono);font-size:13px;padding:9px 12px;outline:none;transition:border-color .15s;}
+.field input:focus{border-color:var(--accent);}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:var(--r2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;width:100%;justify-content:center;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1d4ed8;}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.btn-ghost:hover{background:var(--bg3);}
+.btn-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.step-num{width:24px;height:24px;border-radius:50%;background:rgba(59,130,246,.15);color:var(--accent);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-body{flex:1;}
+.step-title{font-size:13px;font-weight:500;margin-bottom:3px;}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+.code{font-family:var(--mono);font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 12px;color:#60a5fa;margin-top:6px;word-break:break-all;user-select:all;}
+.tag{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500;display:inline-block;margin-left:6px;}
+.tag-ok{background:rgba(34,197,94,.12);color:var(--green);}
+.tag-pend{background:rgba(245,158,11,.12);color:var(--amber);}
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.msg{padding:10px 14px;border-radius:var(--r2);font-size:12px;margin-top:12px;display:none;}
+.msg.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green);}
+.msg.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--red);}
+.msg.show{display:block;}
+.sync-result{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">⚖</div>
+    <div>
+      <div class="logo-name">PeríciaLab</div>
+      <div class="logo-sub">configuração supabase</div>
+    </div>
+  </div>
+
+  <!-- PASSO 1: Como criar o projeto -->
+  <div class="section">
+    <div class="section-title">Passo 1 — Criar projeto no Supabase</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Acesse supabase.com e crie uma conta gratuita</div>
+        <div class="step-desc">O plano gratuito suporta até 500 MB de banco e 2 projetos — mais do que suficiente.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Crie um novo projeto</div>
+        <div class="step-desc">Escolha um nome (ex: pericia-lab), defina uma senha forte para o banco e selecione a região <b>South America (São Paulo)</b>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Execute o esquema do banco</div>
+        <div class="step-desc">No painel do Supabase, vá em <b>SQL Editor → New query</b>, cole o conteúdo do arquivo <code>supabase_schema.sql</code> e clique em <b>Run</b>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Copie as credenciais</div>
+        <div class="step-desc">Vá em <b>Settings → API</b> e copie a <b>Project URL</b> e a <b>anon public key</b>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PASSO 2: Configurar credenciais -->
+  <div class="section">
+    <div class="section-title">Passo 2 — Credenciais <span class="tag tag-ok">✓ Pré-configurado</span></div>
+    <div class="field">
+      <label>Project URL</label>
+      <input type="text" id="cfg-url" placeholder="https://...supabase.co">
+    </div>
+    <div class="field">
+      <label>Publishable key</label>
+      <input type="text" id="cfg-anon" placeholder="sb_publishable_...">
+    </div>
+    <button class="btn btn-ghost" onclick="salvarConfig()" style="margin-bottom:8px;">💾 Salvar configuração</button>
+    <div class="msg" id="msg-config"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PASSO 3: Login -->
+  <div class="section">
+    <div class="section-title">Passo 3 — Fazer login</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">
+      Crie um usuário em <b>Supabase → Authentication → Users → Add user</b> e faça login aqui.
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter') fazerLogin()">
+    </div>
+    <button class="btn btn-primary" onclick="fazerLogin()" id="btn-login">Entrar</button>
+    <div class="msg" id="msg-login"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PASSO 4: Sincronização -->
+  <div class="section" id="section-sync" style="display:none;">
+    <div class="section-title">Passo 4 — Sincronizar dados</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-green" onclick="syncEnviar()">↑ Enviar dados locais</button>
+      <button class="btn btn-ghost" onclick="syncBuscar()">↓ Baixar dados do servidor</button>
+    </div>
+    <div class="sync-result" id="sync-result"></div>
+    <div class="divider" style="margin:16px 0 12px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <a href="web-textos-padrao.html" style="text-decoration:none;">
+        <button class="btn btn-ghost" style="font-size:12px;">📝 Textos padrão</button>
+      </a>
+      <a href="web-gerar-laudo.html" style="text-decoration:none;">
+        <button class="btn btn-ghost" style="font-size:12px;">⚖ Gerar laudo</button>
+      </a>
+      <button class="btn btn-ghost" style="font-size:12px;color:var(--red);" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="supabase_client.js"></script>
+<script>
+// Carrega config salva
+window.addEventListener('load', () => {
+  const cfg = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  // Credenciais padrão já configuradas
+  const url  = cfg.url  || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+  document.getElementById('cfg-url').value  = url;
+  document.getElementById('cfg-anon').value = anon;
+  // Aplica no cliente
+  sb.url  = url.replace(/\/$/, '');
+  sb.anon = anon;
+  sb._loadToken();
+  // Salva automaticamente se ainda não estava salvo
+  if (!cfg.url) localStorage.setItem('sb_config', JSON.stringify({ url, anon }));
+  if (sb.isLoggedIn()) mostrarSync();
+});
+
+function salvarConfig() {
+  const url  = document.getElementById('cfg-url').value.trim();
+  const anon = document.getElementById('cfg-anon').value.trim();
+  if (!url || !anon) return showMsg('msg-config', 'err', 'Preencha os dois campos.');
+  if (!url.includes('supabase.co')) return showMsg('msg-config', 'err', 'URL inválida — deve conter supabase.co');
+
+  // Atualiza o cliente
+  sb.url  = url.replace(/\/$/, '');
+  sb.anon = anon;
+  localStorage.setItem('sb_config', JSON.stringify({ url, anon }));
+
+  // Salva também nos arquivos do sistema (instruções)
+  showMsg('msg-config', 'ok', '✓ Configuração salva! Atualize o arquivo supabase_client.js com estas credenciais para uso permanente.');
+}
+
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  if (!email || !senha) return showMsg('msg-login', 'err', 'Preencha e-mail e senha.');
+
+  const btn = document.getElementById('btn-login');
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try {
+    await sb.signIn(email, senha);
+    showMsg('msg-login', 'ok', '✓ Login realizado!');
+    setTimeout(mostrarSync, 800);
+  } catch(e) {
+    showMsg('msg-login', 'err', 'Erro: ' + e.message);
+  }
+  btn.textContent = 'Entrar'; btn.disabled = false;
+}
+
+function mostrarSync() {
+  document.getElementById('section-sync').style.display = 'block';
+  document.getElementById('sync-result').innerHTML = '<span style="color:var(--green)">✓ Conectado ao Supabase.</span> Use os botões acima para sincronizar.';
+}
+
+async function syncEnviar() {
+  document.getElementById('sync-result').textContent = 'Enviando dados...';
+  const r = await SyncManager.syncTudo();
+  const linhas = [
+    `Textos:    ${r.textos?.ok   ? '✓ ' + r.textos.count   + ' itens' : '✗ ' + r.textos?.msg}`,
+    `Imagens:   ${r.imagens?.ok  ? '✓ ' + r.imagens.count  + ' itens' : '✗ ' + r.imagens?.msg}`,
+    `Processos: ${r.processos?.ok? '✓ ' + r.processos.count+ ' itens' : '✗ ' + r.processos?.msg}`,
+  ];
+  document.getElementById('sync-result').innerHTML = linhas.map(l =>
+    `<div style="font-family:var(--mono)">${l}</div>`).join('');
+}
+
+async function syncBuscar() {
+  document.getElementById('sync-result').textContent = 'Baixando dados...';
+  const r = await SyncManager.fetchTudo();
+  const linhas = [
+    `Textos:    ${r.textos?.ok    ? '✓ ' + r.textos.count    + ' itens' : '✗ ' + r.textos?.msg}`,
+    `Processos: ${r.processos?.ok ? '✓ ' + r.processos.count + ' itens' : '✗ ' + r.processos?.msg}`,
+  ];
+  document.getElementById('sync-result').innerHTML = linhas.map(l =>
+    `<div style="font-family:var(--mono)">${l}</div>`).join('');
+}
+
+async function fazerLogout() {
+  await sb.signOut();
+  document.getElementById('section-sync').style.display = 'none';
+  showMsg('msg-login', 'ok', 'Sessão encerrada.');
+}
+
+function showMsg(id, tipo, txt) {
+  const el = document.getElementById(id);
+  el.textContent = txt;
+  el.className = `msg ${tipo} show`;
+}
+</script>
+</body>
+</html>

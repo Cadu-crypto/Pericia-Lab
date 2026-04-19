@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PeríciaLab — Textos Padrão</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:      #0f1117;
+  --bg2:     #181c25;
+  --bg3:     #1f2433;
+  --bg4:     #252b3b;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text:    #e8eaf0;
+  --text2:   #8b90a0;
+  --text3:   #50566a;
+  --accent:  #3b82f6;
+  --accent2: #1d4ed8;
+  --green:   #22c55e;
+  --amber:   #f59e0b;
+  --red:     #ef4444;
+  --purple:  #8b5cf6;
+  --teal:    #14b8a6;
+  --sidebar: 260px;
+  --topbar:  52px;
+  --font:    'IBM Plex Sans', sans-serif;
+  --mono:    'IBM Plex Mono', monospace;
+  --r:       10px;
+  --r2:      6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── TOPBAR ── */
+.topbar {
+  height: var(--topbar); display: flex; align-items: center;
+  justify-content: space-between; padding: 0 24px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; z-index: 50;
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon { width: 28px; height: 28px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.brand-name { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.brand-sub  { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.topbar-nav { display: flex; gap: 2px; }
+.nav-btn {
+  padding: 6px 14px; border-radius: var(--r2); font-family: var(--font);
+  font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+  background: transparent; color: var(--text2); transition: all 0.15s;
+}
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--bg3); color: var(--text); }
+
+/* ── LAYOUT ── */
+.main-layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar); background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden; flex-shrink: 0;
+}
+.sidebar-header {
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.sidebar-list { flex: 1; overflow-y: auto; padding: 8px 8px; }
+.sidebar-list::-webkit-scrollbar { width: 4px; }
+.sidebar-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.section-group { margin-bottom: 16px; }
+.section-group-label {
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 4px 8px 6px; display: flex; align-items: center; gap: 6px;
+}
+.group-nr {
+  font-size: 9px; padding: 1px 5px; border-radius: 4px;
+  font-weight: 600; font-family: var(--mono);
+}
+.nr15 { background: rgba(59,130,246,0.15); color: var(--accent); }
+.nr16 { background: rgba(239,68,68,0.15); color: var(--red); }
+.nrgeral { background: rgba(139,92,246,0.15); color: var(--purple); }
+
+.sidebar-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: var(--r2);
+  cursor: pointer; transition: all 0.12s;
+  margin-bottom: 1px;
+}
+.sidebar-item:hover { background: var(--bg3); }
+.sidebar-item.active { background: rgba(59,130,246,0.12); }
+.sidebar-item.active .item-label { color: var(--text); }
+.sidebar-item.active .item-dot { background: var(--accent); }
+.item-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border2); flex-shrink: 0; transition: background 0.15s;
+}
+.item-dot.filled { background: var(--green); }
+.item-dot.partial { background: var(--amber); }
+.item-label { font-size: 13px; color: var(--text2); flex: 1; line-height: 1.3; }
+.item-variants {
+  font-size: 10px; font-family: var(--mono); color: var(--text3);
+  background: var(--bg3); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ── EDITOR ÁREA ── */
+.editor-area {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.editor-header {
+  padding: 16px 24px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.editor-title { font-size: 17px; font-weight: 600; margin-bottom: 3px; }
+.editor-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.editor-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 10px;
+  font-weight: 500; border: 1px solid;
+}
+.badge-blue   { background: rgba(59,130,246,0.1);  color: #60a5fa; border-color: rgba(59,130,246,0.2); }
+.badge-green  { background: rgba(34,197,94,0.1);   color: #4ade80; border-color: rgba(34,197,94,0.2); }
+.badge-amber  { background: rgba(245,158,11,0.1);  color: #fbbf24; border-color: rgba(245,158,11,0.2); }
+.badge-purple { background: rgba(139,92,246,0.1);  color: #a78bfa; border-color: rgba(139,92,246,0.2); }
+.badge-red    { background: rgba(239,68,68,0.1);   color: #f87171; border-color: rgba(239,68,68,0.2); }
+.badge-gray   { background: rgba(255,255,255,0.05); color: var(--text2); border-color: var(--border2); }
+
+/* ── VARIANTES TABS ── */
+.variants-bar {
+  display: flex; gap: 4px; padding: 10px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--bg2);
+}
+.variant-tab {
+  padding: 5px 14px; border-radius: var(--r2); font-size: 12px;
+  font-weight: 500; cursor: pointer; border: 1px solid var(--border2);
+  background: transparent; color: var(--text2); transition: all 0.15s;
+  font-family: var(--font);
+}
+.variant-tab:hover { background: var(--bg3); color: var(--text); }
+.variant-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+.variant-tab.has-content { border-color: rgba(34,197,94,0.3); }
+.variant-tab.has-content:not(.active) { color: #4ade80; }
+
+/* ── EDITOR BODY ── */
+.editor-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 16px 24px; gap: 10px; }
+
+/* ── VARIÁVEIS HELPER ── */
+.vars-bar {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  padding: 8px 12px; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: var(--r2);
+  flex-shrink: 0;
+}
+.vars-label { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
+.var-chip {
+  font-size: 11px; font-family: var(--mono); padding: 2px 8px;
+  background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 4px; color: #60a5fa; cursor: pointer;
+  transition: all 0.12s; user-select: none;
+}
+.var-chip:hover { background: rgba(59,130,246,0.2); }
+.var-chip:active { transform: scale(0.96); }
+
+/* ── RICH EDITOR TOOLBAR ── */
+.editor-toolbar {
+  display: flex; gap: 2px; flex-wrap: wrap; align-items: center;
+  padding: 6px 8px; background: var(--bg3);
+  border: 1px solid var(--border2); border-bottom: none;
+  border-radius: var(--r2) var(--r2) 0 0;
+  flex-shrink: 0;
+}
+.tb-sep { width: 1px; height: 20px; background: var(--border2); margin: 0 4px; }
+.tb-btn {
+  padding: 4px 8px; border-radius: 4px; font-size: 13px;
+  background: transparent; color: var(--text2); border: none;
+  cursor: pointer; transition: all 0.12s; font-family: var(--font);
+  line-height: 1; display: flex; align-items: center; gap: 4px;
+}
+.tb-btn:hover { background: var(--bg4); color: var(--text); }
+.tb-btn.active { background: rgba(59,130,246,0.15); color: var(--accent); }
+.tb-select {
+  padding: 3px 6px; border-radius: 4px; font-size: 12px;
+  background: var(--bg4); color: var(--text2); border: 1px solid var(--border2);
+  font-family: var(--font); cursor: pointer; outline: none;
+}
+.tb-select option { background: var(--bg3); }
+
+/* ── CONTENTEDITABLE ── */
+.rich-editor {
+  flex: 1; overflow-y: auto; padding: 16px 24px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 0 0 var(--r2) var(--r2);
+  outline: none; color: var(--text);
+  /* Espelha o texto normal do laudo: Arial 12, 1,5 linha */
+  font-family: Arial, sans-serif;
+  font-size: 15px;        /* 12pt equivalente em tela */
+  line-height: 1.5;
+  min-height: 200px;
+}
+.rich-editor::-webkit-scrollbar { width: 4px; }
+.rich-editor::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.rich-editor:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+
+/* Parágrafo normal: 2cm primeira linha, 0,10cm acima e abaixo */
+.rich-editor p {
+  margin: 2px 0;
+  text-indent: 2cm;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.rich-editor p:last-child { margin-bottom: 0; }
+
+/* Negrito e itálico no texto normal */
+.rich-editor b, .rich-editor strong {
+  color: var(--text);
+  font-weight: 700;
+  font-family: Arial, sans-serif;
+}
+.rich-editor em   { color: #a5b4fc; font-style: italic; }
+.rich-editor u    { text-decoration-color: var(--text3); }
+
+/* Títulos internos */
+.rich-editor h1 { font-size: 15px; font-weight: 700; font-family: Arial, sans-serif; color: var(--text); margin: 12px 0 6px; text-indent: 0; }
+.rich-editor h2 { font-size: 14px; font-weight: 700; font-family: Arial, sans-serif; color: var(--text2); margin: 10px 0 6px; text-indent: 0; }
+
+/* Tabelas */
+.rich-editor table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; font-family: Arial, sans-serif; }
+.rich-editor td, .rich-editor th { border: 1px solid var(--border2); padding: 7px 10px; }
+.rich-editor th { background: var(--bg4); font-weight: 700; color: var(--text2); }
+
+/* Variáveis dinâmicas */
+.rich-editor var {
+  display: inline-block;
+  background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
+  color: #60a5fa; border-radius: 4px; padding: 0 5px;
+  font-family: var(--mono); font-size: 12px; font-style: normal;
+}
+
+/* ── CITAÇÃO ABNT ──
+   Bahnschrift SemiLight 11pt · recuo 4cm · sem 1ª linha · 1,15 linha
+   negrito dentro = Bahnschrift SemiBold                               */
+.rich-editor blockquote {
+  margin: 4px 0 4px 0;
+  padding: 2px 0 2px 4cm;   /* recuo 4cm via padding-left */
+  border: none;
+  font-family: 'Bahnschrift SemiLight', 'Bahnschrift', Calibri, sans-serif;
+  font-size: 13.75px;       /* 11pt equivalente em tela */
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--text2);
+  font-style: normal;
+  text-indent: 0;
+}
+.rich-editor blockquote p {
+  margin: 0;
+  padding: 0;
+  text-indent: 0;
+  font-family: 'Bahnschrift SemiLight', 'Bahnschrift', Calibri, sans-serif;
+  font-size: 13.75px;
+  font-weight: 300;
+  line-height: 1.15;
+}
+/* Negrito dentro da citação = Bahnschrift SemiBold */
+.rich-editor blockquote b,
+.rich-editor blockquote strong {
+  font-family: 'Bahnschrift SemiBold', 'Bahnschrift', Calibri, sans-serif;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Indicador visual sutil de citação no editor (some no DOCX) */
+.rich-editor blockquote::before {
+  content: '';
+  display: block;
+  height: 0;
+  border-top: 1px dashed var(--border2);
+  margin-bottom: 6px;
+}
+.rich-editor blockquote::after {
+  content: '';
+  display: block;
+  height: 0;
+  border-bottom: 1px dashed var(--border2);
+  margin-top: 6px;
+}
+
+.rich-editor br + br { display: none; }
+[contenteditable=true]:empty:before { content: attr(data-placeholder); color: var(--text3); pointer-events: none; }
+
+/* ── EDITOR FOOTER ── */
+.editor-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0; padding-top: 6px;
+}
+.char-count { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.footer-actions { display: flex; gap: 8px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 18px; border-radius: var(--r2); font-family: var(--font);
+  font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px; color: var(--text3);
+}
+.empty-icon { font-size: 48px; opacity: 0.5; }
+.empty-title { font-size: 16px; font-weight: 500; color: var(--text2); }
+.empty-sub { font-size: 13px; text-align: center; max-width: 320px; line-height: 1.6; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--bg4); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 10px 20px;
+  font-size: 13px; color: var(--text);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: transform 0.25s; z-index: 9999; white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.success { border-color: rgba(34,197,94,0.3); }
+#toast.error { border-color: rgba(239,68,68,0.3); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: none; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 24px; width: 480px; max-width: 95vw;
+}
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* ── SCROLLBAR global ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">⚖</div>
+    <div>
+      <div class="brand-name">PeríciaLab</div>
+      <div class="brand-sub">plataforma web</div>
+    </div>
+  </div>
+  <div class="topbar-nav">
+    <button class="nav-btn" onclick="navTo('processos')">Processos</button>
+    <button class="nav-btn active" onclick="navTo('textos')">Textos padrão</button>
+    <button class="nav-btn" onclick="navTo('laudo')">Gerar laudo</button>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <div id="save-status" style="font-size:12px; color:var(--text3); font-family:var(--mono);"></div>
+    <button class="btn btn-primary" onclick="salvarTextoAtual()" style="padding:6px 16px;">Salvar</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="main-layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Seções do laudo</div>
+    </div>
+    <div class="sidebar-list" id="sidebar-list"></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="editor-area" id="editor-area">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📝</div>
+      <div class="empty-title">Selecione uma seção</div>
+      <div class="empty-sub">Escolha uma seção na lateral para cadastrar ou editar o texto padrão correspondente.</div>
+    </div>
+    <div id="editor-wrapper" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <div class="editor-header" id="editor-header"></div>
+      <div class="variants-bar" id="variants-bar" style="display:none;"></div>
+      <!-- Abas Metodologia / Resultado — só para agentes -->
+      <div id="subcampos-bar" style="display:none; gap:4px; padding:8px 24px 0; border-bottom:1px solid var(--border); background:var(--bg2); flex-shrink:0; flex-wrap:wrap; align-items:center;">
+        <button id="sub-met" class="variant-tab active" onclick="selectSubcampo('met')">
+          8 — Metodologia
+        </button>
+        <button id="sub-res" class="variant-tab" onclick="selectSubcampo('res')">
+          9 — Abertura do resultado
+        </button>
+        <span style="font-size:11px; color:var(--text3); margin-left:8px;">— selecione o campo a editar</span>
+      </div>
+      <div class="editor-body">
+        <div class="vars-bar" id="vars-bar" style="display:none;">
+          <span class="vars-label">Variáveis:</span>
+        </div>
+
+        <!-- Painel de imagem do agente (só aparece para seções de agente) -->
+        <div id="imagem-panel" style="display:none; margin-bottom:10px;">
+          <div style="font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px;">
+            Imagem do agente — tópico 7
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            <div id="imagem-preview-box" style="
+              width:160px; height:90px; flex-shrink:0;
+              background:var(--bg4); border:1px dashed var(--border2);
+              border-radius:var(--r2); display:flex; align-items:center;
+              justify-content:center; cursor:pointer; overflow:hidden;
+              transition:border-color 0.15s;"
+              onclick="document.getElementById('img-upload').click()"
+              title="Clique para selecionar imagem">
+              <div id="imagem-placeholder" style="text-align:center; color:var(--text3);">
+                <div style="font-size:24px; margin-bottom:4px;">🖼</div>
+                <div style="font-size:11px;">Clique para carregar</div>
+              </div>
+              <img id="imagem-preview-img" src="" style="display:none; width:100%; height:100%; object-fit:cover;" alt="Imagem do agente">
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:12px; color:var(--text2); margin-bottom:8px; line-height:1.5;">
+                Esta imagem será inserida no tópico 7 do laudo quando este agente for selecionado. Use PNG ou JPG.
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-ghost btn-sm" style="font-size:12px;" onclick="document.getElementById('img-upload').click()">
+                  ↑ Carregar imagem
+                </button>
+                <button class="btn btn-danger btn-sm" style="font-size:12px;" id="btn-remove-img" onclick="removerImagem()" style="display:none;">
+                  × Remover
+                </button>
+              </div>
+              <div id="img-nome" style="font-size:11px; color:var(--text3); margin-top:6px; font-family:var(--mono);"></div>
+            </div>
+          </div>
+          <input type="file" id="img-upload" accept="image/png,image/jpeg,image/jpg" style="display:none" onchange="carregarImagem(this)">
+          <div style="height:1px; background:var(--border); margin-top:14px;"></div>
+          <div style="font-size:11px; color:var(--text3); margin-top:8px; margin-bottom:2px; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">
+            Texto da metodologia e avaliação
+          </div>
+        </div>
+        <div class="editor-toolbar" id="editor-toolbar">
+          <select class="tb-select" onchange="execCmd('formatBlock', this.value); this.value='';">
+            <option value="">Parágrafo</option>
+            <option value="h1">Título 1</option>
+            <option value="h2">Título 2</option>
+            <option value="p">Normal</option>
+          </select>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" onclick="execCmd('bold')" title="Negrito"><b>B</b></button>
+          <button class="tb-btn" onclick="execCmd('italic')" title="Itálico"><em>I</em></button>
+          <button class="tb-btn" onclick="execCmd('underline')" title="Sublinhado"><u>U</u></button>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" onclick="execCmd('justifyLeft')" title="Esquerda">⬅</button>
+          <button class="tb-btn" onclick="execCmd('justifyCenter')" title="Centralizar">↔</button>
+          <button class="tb-btn" onclick="execCmd('justifyFull')" title="Justificar">≡</button>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" onclick="insertTable()" title="Tabela">⊞ Tabela</button>
+          <button class="tb-btn" onclick="execCmd('insertUnorderedList')" title="Lista">• Lista</button>
+          <button class="tb-btn" onclick="insertCitacao()" title="Citação ABNT — fonte menor + recuo + borda">❝ Citação</button>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" onclick="execCmd('undo')" title="Desfazer">↩</button>
+          <button class="tb-btn" onclick="execCmd('redo')" title="Refazer">↪</button>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" onclick="toggleSource()" title="HTML fonte" id="btn-source">‹/›</button>
+        </div>
+        <div id="rich-editor"
+          class="rich-editor"
+          contenteditable="true"
+          data-placeholder="Clique aqui e comece a digitar o texto da seção..."
+          oninput="onEditorInput()"
+          spellcheck="false">
+        </div>
+        <textarea id="source-editor" style="display:none; flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:0 0 var(--r2) var(--r2); color:#a5b4fc; font-family:var(--mono); font-size:12px; padding:14px; outline:none; resize:none; line-height:1.6;" oninput="syncFromSource()" placeholder="Código HTML da seção..."></textarea>
+      </div>
+      <div class="editor-footer" style="padding: 0 24px 16px;">
+        <div class="char-count" id="char-count">0 caracteres</div>
+        <div class="footer-actions">
+          <button class="btn btn-danger btn-sm" onclick="limparTexto()">Limpar</button>
+          <button class="btn btn-ghost" onclick="previewTexto()">Prévia</button>
+          <button class="btn btn-primary" onclick="salvarTextoAtual()">✓ Salvar texto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PREVIEW -->
+<div class="modal-overlay" id="modal-preview">
+  <div class="modal" style="width:680px; max-height:80vh; display:flex; flex-direction:column;">
+    <div class="modal-title">Prévia do texto</div>
+    <div class="modal-sub" id="preview-subtitle"></div>
+    <style>
+      /* Texto normal: Arial 12, 1ª linha 2cm, 1,5 linha, 0,10cm acima/abaixo */
+      #preview-content {
+        font-family: Arial, sans-serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #1a1a1a;
+      }
+      #preview-content p {
+        margin: 1.5px 0;
+        text-indent: 2cm;
+        font-family: Arial, sans-serif;
+        font-size: 12pt;
+        line-height: 1.5;
+      }
+      #preview-content b,
+      #preview-content strong {
+        font-family: Arial, sans-serif;
+        font-weight: 700;
+      }
+      #preview-content em { font-style: italic; }
+
+      /* Citação ABNT: Bahnschrift SemiLight 11pt · recuo 4cm · 1,15 linha */
+      #preview-content blockquote {
+        margin: 3px 0;
+        padding: 0 0 0 4cm;
+        border: none;
+        font-family: 'Bahnschrift SemiLight', 'Bahnschrift', Calibri, sans-serif;
+        font-size: 11pt;
+        font-weight: 300;
+        line-height: 1.15;
+        color: #1a1a1a;
+        font-style: normal;
+        text-indent: 0;
+      }
+      #preview-content blockquote p {
+        margin: 0;
+        text-indent: 0;
+        font-family: 'Bahnschrift SemiLight', 'Bahnschrift', Calibri, sans-serif;
+        font-size: 11pt;
+        font-weight: 300;
+        line-height: 1.15;
+      }
+      /* Negrito dentro da citação = Bahnschrift SemiBold */
+      #preview-content blockquote b,
+      #preview-content blockquote strong {
+        font-family: 'Bahnschrift SemiBold', 'Bahnschrift', Calibri, sans-serif;
+        font-weight: 600;
+      }
+
+      /* Tabelas */
+      #preview-content table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 11pt; font-family: Arial, sans-serif; }
+      #preview-content td, #preview-content th { border: 1px solid #ccc; padding: 6px 10px; }
+      #preview-content th { background: #f0f0f0; font-weight: 700; }
+
+      /* Variáveis — destaque amarelo na prévia */
+      #preview-content var {
+        background: #fef3c7; color: #92400e;
+        padding: 0 4px; border-radius: 3px;
+        font-family: monospace; font-size: 10pt;
+        font-style: normal; border: 1px solid #fcd34d;
+      }
+    </style>
+    <div id="preview-content" style="flex:1; overflow-y:auto; background:white; border-radius:var(--r2); padding:2cm 3cm;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closePreview()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// ESTRUTURA DE SEÇÕES DO LAUDO
+// ═══════════════════════════════════════════
+const SECOES = [
+  {
+    grupo: "Seções gerais",
+    nrClass: "nrgeral",
+    nr: "Geral",
+    itens: [
+      {
+        id: "topico1",
+        label: "1. Objeto da perícia",
+        desc: "Texto próprio para cada variante. O sistema insere o texto correspondente ao objeto da perícia sem subtópicos.",
+        badges: ["badge-blue:Tópico 1"],
+        tipo: "variante_independente",
+        variantes: [
+          { id: "ins",   label: "Insalubridade" },
+          { id: "peri",  label: "Periculosidade" },
+          { id: "ambos", label: "Ambos" },
+        ],
+        vars: ["{{RECLAMANTE}}", "{{RECLAMADA}}", "{{VARA}}", "{{PROCESSO}}"],
+      },
+      {
+        id: "topico2",
+        label: "2. Diligência",
+        desc: "Texto de descrição da diligência. O sistema substitui endereço, data, hora e participantes.",
+        badges: ["badge-green:Tópico 2", "badge-gray:Auto-preenchido"],
+        variantes: null,
+        vars: ["{{ENDERECO}}", "{{DATA_DILIGENCIA}}", "{{HORARIO}}", "{{CIDADE}}"],
+      },
+      {
+        id: "topico2_1",
+        label: "2.1 Ocorrências — sem ocorrências",
+        desc: "Texto padrão quando não há ocorrências durante a diligência.",
+        badges: ["badge-gray:Subtópico 2.1"],
+        variantes: null,
+        vars: [],
+      },
+      {
+        id: "topico3",
+        label: "3. Legislação aplicada",
+        desc: "Cadastre os textos de Insalubridade e Periculosidade separadamente. Quando o objeto for 'Ambos', o sistema gera automaticamente: 3.1 INSALUBRIDADE (texto ins.) + 3.2 PERICULOSIDADE (texto peri.) — não é necessário cadastrar a variante Ambos.",
+        badges: ["badge-blue:Tópico 3", "badge-amber:Ambos = concatenação automática"],
+        tipo: "variante_concatena",
+        variantes: [
+          { id: "ins",  label: "Insalubridade" },
+          { id: "peri", label: "Periculosidade" },
+        ],
+        vars: [],
+      },
+      {
+        id: "topico5",
+        label: "5. EPI — texto fixo",
+        desc: "Parte fixa da seção de EPIs (fundamentação NR-6). A parte final é editada no laudo.",
+        badges: ["badge-amber:Tópico 5", "badge-gray:Parte fixa"],
+        variantes: null,
+        vars: [],
+      },
+      {
+        id: "topico6",
+        label: "6. Local de trabalho",
+        desc: "Texto introdutório da seção. O endereço é preenchido automaticamente da planilha.",
+        badges: ["badge-green:Tópico 6", "badge-gray:Auto-preenchido"],
+        variantes: null,
+        vars: ["{{ENDERECO}}", "{{CIDADE}}"],
+      },
+      {
+        id: "topico7_intro",
+        label: "7. Identificação de agentes — abertura",
+        desc: "Parágrafo de abertura do tópico 7. Varia conforme o objeto da perícia. Após esse texto, o sistema insere automaticamente o bloco de imagens dos agentes selecionados no iPad.",
+        badges: ["badge-blue:Tópico 7", "badge-gray:Antes das imagens"],
+        tipo: "variante_independente",
+        variantes: [
+          { id: "ins",   label: "Insalubridade" },
+          { id: "peri",  label: "Periculosidade" },
+          { id: "ambos", label: "Ambos" },
+        ],
+        vars: ["{{RECLAMANTE}}"],
+      },
+      {
+        id: "topico7_fechamento",
+        label: "7. Identificação de agentes — fechamento",
+        desc: "Parágrafo fixo que aparece após o bloco de imagens dos agentes. Ex.: 'Não serão avaliados os demais agentes...'",
+        badges: ["badge-blue:Tópico 7", "badge-gray:Após as imagens"],
+        variantes: null,
+        vars: [],
+      },
+      {
+        id: "topico11_honorarios",
+        label: "11. Honorários — fórmula e texto",
+        desc: "Texto do cálculo de honorários com fórmula e dados bancários.",
+        badges: ["badge-purple:Tópico 11"],
+        variantes: null,
+        vars: ["{{VALOR_HONORARIOS}}", "{{GRAU_COMPLEXIDADE}}"],
+      },
+      {
+        id: "encerramento",
+        label: "12. Encerramento",
+        desc: "Texto de encerramento do laudo com número de páginas e assinatura.",
+        badges: ["badge-gray:Encerramento"],
+        variantes: null,
+        vars: ["{{CIDADE}}", "{{DATA_LAUDO}}", "{{TOTAL_PAGINAS}}"],
+      },
+    ],
+  },
+  {
+    grupo: "Agentes NR-15",
+    nrClass: "nr15",
+    nr: "NR-15",
+    itens: [
+      { id:"ag_nr15_a1",   label:"Anexo 1 — Ruído contínuo",           desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Agente Físico Ruído contínuo ou intermitente.",    badges:["badge-blue:Físico","badge-gray:Anexo 1"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{RESULTADO_NIVEL_RUIDO}}", "{{INSTRUMENTO}}", "{{LT}}"] },
+      { id:"ag_nr15_a2",   label:"Anexo 2 — Ruído de impacto",         desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Agente Físico Ruído de impacto.",                badges:["badge-blue:Físico","badge-gray:Anexo 2"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{RESULTADO_NIVEL_RUIDO}}", "{{INSTRUMENTO}}"] },
+      { id:"ag_nr15_a3",   label:"Anexo 3 — Calor",                    desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Agente Físico Calor.",                            badges:["badge-blue:Físico","badge-gray:Anexo 3"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{RESULTADO_IBUTG}}", "{{INSTRUMENTO}}", "{{LT_CALOR}}"] },
+      { id:"ag_nr15_a5",   label:"Anexo 5 — Rad. ionizantes",          desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Radiações ionizantes.",                          badges:["badge-blue:Físico","badge-gray:Anexo 5"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr15_a6",   label:"Anexo 6 — Pressões hiperbáricas",    desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Pressões hiperbáricas.",                         badges:["badge-blue:Físico","badge-gray:Anexo 6"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr15_a7",   label:"Anexo 7 — Rad. não ionizantes",      desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Radiações não ionizantes.",                      badges:["badge-blue:Físico","badge-gray:Anexo 7"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{TIPO_RADIACAO}}", "{{INSTRUMENTO}}"] },
+      { id:"ag_nr15_a8",   label:"Anexo 8 — Vibrações",                desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Vibrações.",                                     badges:["badge-blue:Físico","badge-gray:Anexo 8"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{RESULTADO_VIBRACAO}}", "{{INSTRUMENTO}}"] },
+      { id:"ag_nr15_a9",   label:"Anexo 9 — Frio",                     desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Frio.",                                          badges:["badge-blue:Físico","badge-gray:Anexo 9"],    hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr15_a10",  label:"Anexo 10 — Umidade",                 desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Umidade.",                                       badges:["badge-blue:Físico","badge-gray:Anexo 10"],   hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr15_a11",  label:"Anexo 11 — Agentes químicos (LT)",   desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Agentes químicos com limites de tolerância.",    badges:["badge-amber:Químico","badge-gray:Anexo 11"], hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{AGENTE_QUIMICO}}", "{{RESULTADO}}", "{{LT}}"] },
+      { id:"ag_nr15_a12",  label:"Anexo 12 — Poeiras minerais",        desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Poeiras minerais.",                              badges:["badge-amber:Químico","badge-gray:Anexo 12"], hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{TIPO_POEIRA}}", "{{RESULTADO}}"] },
+      { id:"ag_nr15_a13",  label:"Anexo 13 — Quím. por atividade",     desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Insalubridade química por atividade.",           badges:["badge-amber:Químico","badge-gray:Anexo 13"], hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{ATIVIDADE}}"] },
+      { id:"ag_nr15_a13a", label:"Anexo 13-A — Benzeno",               desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Benzeno e compostos.",                          badges:["badge-amber:Químico","badge-gray:Anexo 13-A"],hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{RESULTADO_BENZENO}}"] },
+      { id:"ag_nr15_a14",  label:"Anexo 14 — Biológicos",              desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Agentes biológicos.",                           badges:["badge-green:Biológico","badge-gray:Anexo 14"],hasImagem:true, hasSubcampos:true, variantes:null, vars:["{{ATIVIDADE_BIO}}"] },
+    ],
+  },
+  {
+    grupo: "Agentes NR-16",
+    nrClass: "nr16",
+    nr: "NR-16",
+    itens: [
+      { id:"ag_nr16_a1",  label:"Anexo 1 — Explosivos",                desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Explosivos.",                               badges:["badge-red:Periculosidade","badge-gray:Anexo 1"], hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr16_a2",  label:"Anexo 2 — Inflamáveis",               desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Inflamáveis e líquidos combustíveis.",        badges:["badge-red:Periculosidade","badge-gray:Anexo 2"], hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr16_a3a", label:"Anexo 3 — Energia elétrica",          desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Energia elétrica.",                              badges:["badge-red:Periculosidade","badge-gray:Anexo 3"], hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr16_a3b", label:"Anexo 3 — Rad. ionizantes (NR-16)",   desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Radiações ionizantes / substâncias radioativas.", badges:["badge-red:Periculosidade","badge-gray:Anexo 3"], hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr16_a3c", label:"Anexo 3 — Segurança pessoal",         desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Roubos e violências físicas.",                  badges:["badge-red:Periculosidade","badge-gray:Anexo 3"], hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+      { id:"ag_nr16_a5",  label:"Anexo 5 — Motocicleta",               desc:"Imagem + Tópico 8 (metodologia) + Tópico 9 (abertura do resultado). Motocicleta em atividade profissional.",         badges:["badge-red:Periculosidade","badge-gray:Anexo 5"], hasImagem:true, hasSubcampos:true, variantes:null, vars:[] },
+    ],
+  },
+];
+
+// ═══════════════════════════════════════════
+// STORAGE (localStorage por enquanto)
+// ═══════════════════════════════════════════
+const STORE_KEY = 'pericia_textos_v1';
+
+function loadTextos() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveTextos(textos) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(textos));
+}
+
+let TEXTOS = loadTextos();
+
+// ═══════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════
+let secaoAtual = null;
+let varianteAtual = null;
+let subcampoAtual = null; // 'met' = metodologia (tóp. 8) | 'res' = resultado (tóp. 9) | null = sem subcampo
+let sourceMode = false;
+
+// ═══════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════
+function renderSidebar() {
+  const el = document.getElementById('sidebar-list');
+  el.innerHTML = SECOES.map(grupo => `
+    <div class="section-group">
+      <div class="section-group-label">
+        ${grupo.grupo}
+        <span class="group-nr ${grupo.nrClass}">${grupo.nr}</span>
+      </div>
+      ${grupo.itens.map(item => {
+        const status = getItemStatus(item);
+        return `
+        <div class="sidebar-item ${secaoAtual?.id === item.id ? 'active' : ''}" onclick="selectSecao('${item.id}')">
+          <div class="item-dot ${status}"></div>
+          <span class="item-label">${item.label}</span>
+          ${item.variantes ? `<span class="item-variants">${countVariantes(item)}/${item.variantes.length}</span>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function countVariantes(item) {
+  return item.variantes.filter(v => TEXTOS[`${item.id}_${v.id}`]).length;
+}
+
+// ═══════════════════════════════════════════
+// SELECIONAR SEÇÃO
+// ═══════════════════════════════════════════
+function selectSecao(id) {
+  if (secaoAtual) autoSave();
+
+  const item = SECOES.flatMap(g => g.itens).find(i => i.id === id);
+  if (!item) return;
+  secaoAtual = item;
+  varianteAtual = item.variantes ? item.variantes[0].id : null;
+  subcampoAtual = item.hasSubcampos ? 'met' : null;
+  sourceMode = false;
+
+  renderSidebar();
+  renderEditorHeader();
+  renderVariantesBar();
+  renderSubcamposBar();
+  renderVarsBar();
+  loadTextoNoEditor();
+  renderImagemPanel();
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('editor-wrapper').style.display = 'flex';
+  document.getElementById('source-editor').style.display = 'none';
+  document.getElementById('rich-editor').style.display = '';
+}
+
+function selectSubcampo(sc) {
+  autoSave();
+  subcampoAtual = sc;
+  renderSubcamposBar();
+  loadTextoNoEditor();
+  updateCharCount();
+}
+
+function renderSubcamposBar() {
+  const bar = document.getElementById('subcampos-bar');
+  if (!secaoAtual?.hasSubcampos) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  const temMet = !!TEXTOS[`${secaoAtual.id}_met`];
+  const temRes = !!TEXTOS[`${secaoAtual.id}_res`];
+  document.getElementById('sub-met').className =
+    `variant-tab ${subcampoAtual==='met'?'active':''} ${temMet&&subcampoAtual!=='met'?'has-content':''}`;
+  document.getElementById('sub-res').className =
+    `variant-tab ${subcampoAtual==='res'?'active':''} ${temRes&&subcampoAtual!=='res'?'has-content':''}`;
+  // Placeholder do editor muda conforme subcampo
+  const ed = document.getElementById('rich-editor');
+  ed.setAttribute('data-placeholder',
+    subcampoAtual === 'met'
+      ? 'Digite aqui o texto de metodologia (tópico 8) para este agente...'
+      : 'Digite aqui o texto de abertura do resultado (tópico 9) para este agente...'
+  );
+}
+
+// ═══════════════════════════════════════════
+// EDITOR HEADER
+// ═══════════════════════════════════════════
+function renderEditorHeader() {
+  if (!secaoAtual) return;
+  const badges = (secaoAtual.badges || []).map(b => {
+    const [cls, txt] = b.split(':');
+    return `<span class="badge ${cls}">${txt}</span>`;
+  }).join('');
+  document.getElementById('editor-header').innerHTML = `
+    <div>
+      <div class="editor-title">${secaoAtual.label}</div>
+      <div class="editor-desc">${secaoAtual.desc}</div>
+      <div class="editor-badges">${badges}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// VARIANTES
+// ═══════════════════════════════════════════
+function renderVariantesBar() {
+  const bar = document.getElementById('variants-bar');
+  if (!secaoAtual?.variantes) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = secaoAtual.variantes.map(v => {
+    const key = `${secaoAtual.id}_${v.id}`;
+    const tem = !!TEXTOS[key];
+    return `<button class="variant-tab ${varianteAtual === v.id ? 'active' : ''} ${tem ? 'has-content' : ''}"
+      onclick="selectVariante('${v.id}')">${v.label}</button>`;
+  }).join('') + `<div style="font-size:11px; color:var(--text3); margin-left:8px; align-self:center;">— selecione a variante para editar</div>`;
+}
+
+function selectVariante(vid) {
+  autoSave();
+  varianteAtual = vid;
+  renderVariantesBar();
+  loadTextoNoEditor();
+}
+
+// ═══════════════════════════════════════════
+// VARIÁVEIS BAR
+// ═══════════════════════════════════════════
+function renderVarsBar() {
+  const bar = document.getElementById('vars-bar');
+  if (!secaoAtual?.vars?.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = `<span class="vars-label">Variáveis:</span>` +
+    secaoAtual.vars.map(v =>
+      `<span class="var-chip" onclick="insertVar('${v}')" title="Clique para inserir">${v}</span>`
+    ).join('');
+}
+
+function insertVar(v) {
+  const ed = document.getElementById('rich-editor');
+  ed.focus();
+  document.execCommand('insertHTML', false, `<var>${v}</var>&nbsp;`);
+  onEditorInput();
+}
+
+// ═══════════════════════════════════════════
+// CARREGAR / SALVAR TEXTO
+// ═══════════════════════════════════════════
+function getKey() {
+  if (!secaoAtual) return null;
+  // Agente com subcampos: chave = id_met ou id_res
+  if (secaoAtual.hasSubcampos && subcampoAtual) return `${secaoAtual.id}_${subcampoAtual}`;
+  // Seção com variantes: chave = id_variante
+  if (secaoAtual.variantes) return `${secaoAtual.id}_${varianteAtual}`;
+  // Seção simples
+  return secaoAtual.id;
+}
+
+function loadTextoNoEditor() {
+  const key = getKey();
+  const html = key ? (TEXTOS[key] || '') : '';
+  const ed = document.getElementById('rich-editor');
+  const src = document.getElementById('source-editor');
+  ed.innerHTML = html;
+  src.value = html;
+  updateCharCount();
+}
+
+function autoSave() {
+  const key = getKey();
+  if (!key) return;
+  const html = sourceMode
+    ? document.getElementById('source-editor').value
+    : document.getElementById('rich-editor').innerHTML;
+  if (html.trim() && html !== '<br>') {
+    TEXTOS[key] = html;
+    saveTextos(TEXTOS);
+  }
+}
+
+function salvarTextoAtual() {
+  autoSave();
+  renderSidebar();
+  showSaveStatus('✓ Salvo');
+  toast('✓ Texto salvo com sucesso!', 'success');
+}
+
+function limparTexto() {
+  if (!confirm('Limpar o texto desta seção/variante?')) return;
+  const key = getKey();
+  if (key) { delete TEXTOS[key]; saveTextos(TEXTOS); }
+  document.getElementById('rich-editor').innerHTML = '';
+  document.getElementById('source-editor').value = '';
+  updateCharCount();
+  renderSidebar();
+  renderVariantesBar();
+  toast('Texto removido.', '');
+}
+
+// ═══════════════════════════════════════════
+// EDITOR HELPERS
+// ═══════════════════════════════════════════
+function execCmd(cmd, val) {
+  document.getElementById('rich-editor').focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+function insertTable() {
+  const html = `<table><thead><tr><th>Coluna 1</th><th>Coluna 2</th><th>Coluna 3</th></tr></thead><tbody><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></tbody></table><p></p>`;
+  document.getElementById('rich-editor').focus();
+  document.execCommand('insertHTML', false, html);
+  onEditorInput();
+}
+
+function insertCitacao() {
+  // Verifica se há texto selecionado — se sim, envolve; se não, insere bloco vazio
+  const sel = window.getSelection();
+  const textoSel = sel && !sel.isCollapsed ? sel.toString() : '';
+  const conteudo = textoSel
+    ? textoSel.split('\n').map(l => `<p>${l}</p>`).join('')
+    : '<p>Texto da citação aqui...</p>';
+  const html = `<blockquote>${conteudo}</blockquote><p></p>`;
+  document.getElementById('rich-editor').focus();
+  document.execCommand('insertHTML', false, html);
+  onEditorInput();
+}
+
+function toggleSource() {
+  sourceMode = !sourceMode;
+  const rich = document.getElementById('rich-editor');
+  const src  = document.getElementById('source-editor');
+  const btn  = document.getElementById('btn-source');
+  if (sourceMode) {
+    src.value = rich.innerHTML;
+    rich.style.display = 'none';
+    src.style.display = 'block';
+    btn.classList.add('active');
+  } else {
+    rich.innerHTML = src.value;
+    rich.style.display = '';
+    src.style.display = 'none';
+    btn.classList.remove('active');
+  }
+  updateCharCount();
+}
+
+function syncFromSource() {
+  updateCharCount();
+}
+
+function onEditorInput() {
+  updateCharCount();
+  showSaveStatus('Não salvo');
+}
+
+function updateCharCount() {
+  const content = sourceMode
+    ? document.getElementById('source-editor').value
+    : document.getElementById('rich-editor').innerText || '';
+  document.getElementById('char-count').textContent = content.length + ' caracteres';
+}
+
+function showSaveStatus(msg) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.style.color = msg.startsWith('✓') ? 'var(--green)' : 'var(--amber)';
+}
+
+// ═══════════════════════════════════════════
+// PRÉVIA
+// ═══════════════════════════════════════════
+function previewTexto() {
+  const html = sourceMode
+    ? document.getElementById('source-editor').value
+    : document.getElementById('rich-editor').innerHTML;
+  const label = secaoAtual?.variantes
+    ? `${secaoAtual.label} — ${secaoAtual.variantes.find(v=>v.id===varianteAtual)?.label}`
+    : secaoAtual?.label;
+  document.getElementById('preview-subtitle').textContent = label || '';
+  // Substitui vars por placeholder visual
+  const preview = html.replace(/<var>{{(\w+)}}<\/var>/g, '<span style="background:#fef3c7;color:#92400e;padding:0 4px;border-radius:3px;font-family:monospace;font-size:12px;">{{$1}}</span>');
+  document.getElementById('preview-content').innerHTML = preview || '<em style="color:#999">Nenhum texto cadastrado.</em>';
+  document.getElementById('modal-preview').classList.add('show');
+}
+
+function closePreview() {
+  document.getElementById('modal-preview').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (type || '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════
+// NAV (stub)
+// ═══════════════════════════════════════════
+function navTo(tela) {
+  toast(`Módulo "${tela}" em desenvolvimento.`, '');
+}
+
+// ═══════════════════════════════════════════
+// IMAGENS DOS AGENTES
+// ═══════════════════════════════════════════
+function renderImagemPanel() {
+  const panel = document.getElementById('imagem-panel');
+  if (!secaoAtual?.hasImagem) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  // Carrega imagem salva se existir
+  const imgKey = `img_${secaoAtual.id}`;
+  const imgData = TEXTOS[imgKey];
+  const img    = document.getElementById('imagem-preview-img');
+  const placeholder = document.getElementById('imagem-placeholder');
+  const btnRemove   = document.getElementById('btn-remove-img');
+  const nomeEl      = document.getElementById('img-nome');
+  if (imgData) {
+    img.src = imgData.data;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    btnRemove.style.display = 'inline-flex';
+    nomeEl.textContent = imgData.nome || '';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    placeholder.style.display = 'block';
+    btnRemove.style.display = 'none';
+    nomeEl.textContent = 'Nenhuma imagem cadastrada';
+  }
+}
+
+function carregarImagem(input) {
+  const file = input.files[0];
+  if (!file || !secaoAtual) return;
+  const maxMB = 2;
+  if (file.size > maxMB * 1024 * 1024) {
+    toast(`Imagem muito grande. Máximo ${maxMB}MB.`, 'error'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const imgKey = `img_${secaoAtual.id}`;
+    TEXTOS[imgKey] = { data: e.target.result, nome: file.name, tipo: file.type };
+    saveTextos(TEXTOS);
+    renderImagemPanel();
+    renderSidebar();
+    toast('✓ Imagem salva!', 'success');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function removerImagem() {
+  if (!secaoAtual) return;
+  if (!confirm('Remover a imagem deste agente?')) return;
+  const imgKey = `img_${secaoAtual.id}`;
+  delete TEXTOS[imgKey];
+  saveTextos(TEXTOS);
+  renderImagemPanel();
+  renderSidebar();
+  toast('Imagem removida.', '');
+}
+
+function getItemStatus(item) {
+  // Agentes com subcampos: verde = tem imagem + met + res; amarelo = tem pelo menos um
+  if (item.hasSubcampos) {
+    const temImg = !!TEXTOS[`img_${item.id}`];
+    const temMet = !!TEXTOS[`${item.id}_met`];
+    const temRes = !!TEXTOS[`${item.id}_res`];
+    if (temImg && temMet && temRes) return 'filled';
+    if (temImg || temMet || temRes) return 'partial';
+    return '';
+  }
+  // Seções com variantes
+  if (item.variantes) {
+    const filled = item.variantes.filter(v => TEXTOS[`${item.id}_${v.id}`]).length;
+    if (filled === 0) return '';
+    if (filled === item.variantes.length) return 'filled';
+    return 'partial';
+  }
+  // Seção simples com imagem
+  if (item.hasImagem) {
+    const temTexto = !!TEXTOS[item.id];
+    const temImg   = !!TEXTOS[`img_${item.id}`];
+    if (temTexto && temImg)  return 'filled';
+    if (temTexto || temImg)  return 'partial';
+    return '';
+  }
+  return TEXTOS[item.id] ? 'filled' : '';
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+renderSidebar();
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    salvarTextoAtual();
+  }
+});
+
+window.addEventListener('beforeunload', () => { autoSave(); });
+</script>
+</body>
+</html>

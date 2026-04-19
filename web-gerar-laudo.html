@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PeríciaLab — Gerar Laudo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#0f1117; --bg2:#181c25; --bg3:#1f2433; --bg4:#252b3b;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0; --text2:#8b90a0; --text3:#50566a;
+  --accent:#3b82f6; --accent2:#1d4ed8;
+  --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+  --font:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+  --r:10px; --r2:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOPBAR */
+.topbar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.brand-name{font-size:15px;font-weight:600;}
+.brand-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.nav-btn{padding:6px 14px;border-radius:var(--r2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .15s;}
+.nav-btn:hover{background:var(--bg3);color:var(--text);}
+.nav-btn.active{background:var(--bg3);color:var(--text);}
+
+/* LAYOUT */
+.body{display:flex;flex:1;overflow:hidden;}
+
+/* LISTA PROCESSOS */
+.painel-lista{width:320px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.painel-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.painel-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;}
+.lista-scroll{flex:1;overflow-y:auto;padding:8px;}
+.lista-scroll::-webkit-scrollbar{width:4px;}
+.lista-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* PROCESSO ITEM */
+.proc-item{padding:12px 14px;border-radius:var(--r2);cursor:pointer;transition:all .12s;margin-bottom:4px;border:1px solid transparent;}
+.proc-item:hover{background:var(--bg3);}
+.proc-item.active{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);}
+.proc-num{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px;}
+.proc-nome{font-size:13px;font-weight:600;margin-bottom:2px;}
+.proc-empresa{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.proc-meta{display:flex;gap:8px;margin-top:6px;}
+.proc-tag{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500;}
+.tag-ins{background:rgba(59,130,246,.12);color:#60a5fa;}
+.tag-peri{background:rgba(239,68,68,.12);color:#f87171;}
+.tag-ambos{background:rgba(139,92,246,.12);color:#a78bfa;}
+.tag-ok{background:rgba(34,197,94,.12);color:#4ade80;}
+.tag-pend{background:rgba(245,158,11,.12);color:#fbbf24;}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ÁREA PRINCIPAL */
+.area-principal{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;padding:10px 20px 0;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab-btn{padding:8px 18px;border-radius:var(--r2) var(--r2) 0 0;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);background:transparent;color:var(--text3);transition:all .15s;border-bottom:2px solid transparent;}
+.tab-btn:hover{color:var(--text2);}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--accent);}
+
+/* CONTEÚDO TABS */
+.tab-content{flex:1;overflow:hidden;display:none;}
+.tab-content.active{display:flex;flex-direction:column;}
+
+/* REVISÃO */
+.revisao-scroll{flex:1;overflow-y:auto;padding:20px 24px;}
+.revisao-scroll::-webkit-scrollbar{width:5px;}
+.revisao-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.sec-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:12px;}
+.sec-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.sec-card-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;}
+.sec-card-badge{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:500;}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-item label{display:block;font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500;}
+.field-item input,.field-item select,.field-item textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;}
+.field-item input:focus,.field-item select:focus,.field-item textarea:focus{border-color:var(--accent);}
+.field-item textarea{resize:vertical;min-height:60px;}
+.field-full{grid-column:1/-1;}
+.agente-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);margin:2px;color:var(--text2);}
+.agente-chip.nr15{border-color:rgba(59,130,246,.25);color:#60a5fa;}
+.agente-chip.nr16{border-color:rgba(239,68,68,.25);color:#f87171;}
+.alerta{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--r2);padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;}
+.alerta-icon{flex-shrink:0;font-size:14px;}
+
+/* PRÉVIA */
+.previa-toolbar{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.previa-scroll{flex:1;overflow-y:auto;padding:24px;}
+.previa-scroll::-webkit-scrollbar{width:5px;}
+.previa-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.previa-page{background:white;max-width:800px;margin:0 auto;padding:3cm 2.5cm;border-radius:4px;box-shadow:0 4px 32px rgba(0,0,0,.4);color:#1a1a1a;font-family:Arial,sans-serif;font-size:12pt;line-height:1.5;}
+
+/* Estilos do laudo na prévia */
+.previa-page .laudo-header{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a3a6b;}
+.previa-page .laudo-header img{max-height:80px;}
+.previa-page .laudo-header .perito-nome{font-size:16pt;font-weight:700;color:#1a3a6b;margin-top:8px;}
+.previa-page .laudo-header .perito-sub{font-size:10pt;color:#555;}
+.previa-page .secao-titulo{font-size:12pt;font-weight:700;text-transform:uppercase;margin:20px 0 8px;color:#1a1a1a;}
+.previa-page .subsecao-titulo{font-size:12pt;font-weight:700;margin:14px 0 6px;}
+.previa-page p{margin:0 0 2px;text-indent:2cm;font-size:12pt;line-height:1.5;}
+.previa-page blockquote{margin:4px 0 4px 0;padding:2px 0 2px 4cm;border:none;font-family:'Bahnschrift SemiLight','Bahnschrift',Calibri,sans-serif;font-size:11pt;font-weight:300;line-height:1.15;color:#1a1a1a;}
+.previa-page table{border-collapse:collapse;width:100%;margin:10px 0;font-size:11pt;}
+.previa-page td,.previa-page th{border:1px solid #ccc;padding:6px 10px;}
+.previa-page th{background:#f0f0f0;font-weight:700;}
+.previa-page .tabela-partes{width:100%;margin:12px 0;}
+.previa-page .tabela-partes td{padding:6px 10px;border:1px solid #ccc;font-size:11pt;}
+.previa-page .tabela-partes th{background:#1a3a6b;color:white;font-size:11pt;padding:7px 10px;}
+.previa-page .agentes-bloco{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;padding:12px;border:2px solid #c00;border-radius:4px;}
+.previa-page .agente-card{background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:8px 12px;font-size:10pt;font-weight:700;min-width:140px;}
+.previa-page var{background:#fef3c7;color:#92400e;padding:0 4px;border-radius:3px;font-family:monospace;font-size:10pt;font-style:normal;}
+.previa-page .prescricao-aviso{background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:8px 12px;font-size:10pt;color:#856404;margin:8px 0;}
+
+/* EMPTY STATE */
+.empty-area{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text3);}
+.empty-icon{font-size:48px;opacity:.4;}
+.empty-title{font-size:16px;font-weight:500;color:var(--text2);}
+.empty-sub{font-size:13px;text-align:center;max-width:300px;line-height:1.6;}
+
+/* BOTÕES */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--r2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);}
+.btn-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.btn-green:hover{background:rgba(34,197,94,.2);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+
+/* FOOTER AÇÕES */
+.acoes-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:var(--bg2);}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:10px 20px;font-size:13px;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .25s;z-index:9999;white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.ok{border-color:rgba(34,197,94,.3);}
+
+/* LOADING */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,23,.85);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">⚖</div>
+    <div><div class="brand-name">PeríciaLab</div><div class="brand-sub">plataforma web</div></div>
+  </div>
+  <div style="display:flex;gap:2px;">
+    <button class="nav-btn" onclick="navTo('processos')">Processos</button>
+    <button class="nav-btn" onclick="navTo('textos')">Textos padrão</button>
+    <button class="nav-btn active">Gerar laudo</button>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div id="servidor-badge" onclick="verificarServidor()" title="Clique para verificar" style="cursor:pointer;font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:10px;display:flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.2);">
+      <div style="width:6px;height:6px;border-radius:50%;background:currentColor;"></div>
+      <span id="servidor-status">Verificando...</span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);font-family:var(--mono);" id="status-bar"></div>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- LISTA DE PROCESSOS -->
+  <div class="painel-lista">
+    <div class="painel-header">
+      <span class="painel-title">Processos</span>
+      <button class="btn btn-ghost btn-sm" onclick="carregarDadosTeste()">Demo</button>
+    </div>
+    <div class="lista-scroll" id="lista-processos">
+      <div class="empty-area" style="padding:40px 0;">
+        <div class="empty-icon">📋</div>
+        <div style="font-size:13px;color:var(--text3);text-align:center;">Nenhum processo.<br>Importe pelo app iPad.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÁREA PRINCIPAL -->
+  <div class="area-principal">
+    <div class="empty-area" id="empty-principal">
+      <div class="empty-icon">⚖</div>
+      <div class="empty-title">Selecione um processo</div>
+      <div class="empty-sub">Escolha um processo na lista para revisar os dados e gerar o laudo.</div>
+    </div>
+
+    <div id="painel-processo" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="mudarTab('revisao',this)">① Revisar dados</button>
+        <button class="tab-btn" onclick="mudarTab('previa',this)">② Prévia do laudo</button>
+      </div>
+
+      <!-- TAB REVISÃO -->
+      <div class="tab-content active" id="tab-revisao">
+        <div class="revisao-scroll" id="revisao-content"></div>
+        <div class="acoes-footer">
+          <button class="btn btn-ghost" onclick="mudarTab('previa', document.querySelectorAll('.tab-btn')[1])">Ver prévia →</button>
+          <button class="btn btn-primary" onclick="gerarPrevia()">Gerar prévia do laudo</button>
+        </div>
+      </div>
+
+      <!-- TAB PRÉVIA -->
+      <div class="tab-content" id="tab-previa">
+        <div class="previa-toolbar">
+          <span style="font-size:12px;color:var(--text2);flex:1;" id="previa-status">Prévia não gerada ainda.</span>
+          <button class="btn btn-ghost btn-sm" onclick="gerarPrevia()">↺ Regerar</button>
+          <button class="btn btn-green" onclick="exportarDocx()" id="btn-exportar" disabled>⬇ Exportar DOCX</button>
+        </div>
+        <div class="previa-scroll">
+          <div id="previa-container">
+            <div class="empty-area">
+              <div class="empty-icon">📄</div>
+              <div class="empty-title">Prévia não gerada</div>
+              <div class="empty-sub">Clique em "Gerar prévia do laudo" para visualizar o documento.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text2);" id="loading-msg">Gerando laudo...</div>
+</div>
+
+<!-- MODAL SERVIDOR OFFLINE -->
+<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:200;" id="modal-servidor" class="modal-overlay">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:28px;width:520px;max-width:95vw;">
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Servidor local offline</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">Para gerar o DOCX nativo, o servidor local precisa estar rodando na sua máquina.</div>
+
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Como iniciar o servidor</div>
+
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">1. Abra o terminal na pasta do sistema</div>
+      <div style="font-family:var(--mono);font-size:12px;background:var(--bg4);padding:8px 12px;border-radius:var(--r2);color:#60a5fa;margin-bottom:12px;user-select:all;">node servidor.js</div>
+
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">2. Aguarde a mensagem de confirmação:</div>
+      <div style="font-family:var(--mono);font-size:11px;background:var(--bg4);padding:8px 12px;border-radius:var(--r2);color:var(--green);margin-bottom:12px;">Aguardando conexões...</div>
+
+      <div style="font-size:12px;color:var(--text2);">3. Clique em "Tentar novamente" abaixo</div>
+    </div>
+
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:var(--r2);padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:20px;">
+      ⚠ O servidor precisa rodar localmente para ter acesso à lib docx e ao Node.js. Ele não requer internet.
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-ghost" onclick="fecharModalServidor()">Fechar</button>
+      <button class="btn btn-primary" onclick="fecharModalServidor()">↺ Tentar novamente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STORAGE — lê textos padrão e processos
+// ═══════════════════════════════════════════
+function loadTextos() {
+  try { return JSON.parse(localStorage.getItem('pericia_textos_v1') || '{}'); }
+  catch { return {}; }
+}
+function loadProcessos() {
+  try { return JSON.parse(localStorage.getItem('pericia_processos_v1') || '[]'); }
+  catch { return []; }
+}
+function saveProcessos(arr) {
+  localStorage.setItem('pericia_processos_v1', JSON.stringify(arr));
+}
+
+let TEXTOS = loadTextos();
+let processos = loadProcessos();
+let processoAtual = null;
+let laudoGerado = false;
+
+// ═══════════════════════════════════════════
+// AGENTES — mapa de IDs para metadados
+// ═══════════════════════════════════════════
+const AGENTES_MAP = {
+  'nr15-a1':  {nome:'Agente Físico Ruído',                  anexo:'Anexo 1', nr:'NR-15', tipo:'ins'},
+  'nr15-a2':  {nome:'Agente Físico Ruído de Impacto',       anexo:'Anexo 2', nr:'NR-15', tipo:'ins'},
+  'nr15-a3':  {nome:'Agente Físico Calor',                  anexo:'Anexo 3', nr:'NR-15', tipo:'ins'},
+  'nr15-a5':  {nome:'Radiações Ionizantes',                 anexo:'Anexo 5', nr:'NR-15', tipo:'ins'},
+  'nr15-a6':  {nome:'Pressões Hiperbáricas',                anexo:'Anexo 6', nr:'NR-15', tipo:'ins'},
+  'nr15-a7':  {nome:'Radiações Não Ionizantes',             anexo:'Anexo 7', nr:'NR-15', tipo:'ins'},
+  'nr15-a8':  {nome:'Vibrações',                            anexo:'Anexo 8', nr:'NR-15', tipo:'ins'},
+  'nr15-a9':  {nome:'Agente Físico Frio',                   anexo:'Anexo 9', nr:'NR-15', tipo:'ins'},
+  'nr15-a10': {nome:'Umidade',                              anexo:'Anexo 10',nr:'NR-15', tipo:'ins'},
+  'nr15-a11': {nome:'Agentes Químicos (Limites Tolerância)',anexo:'Anexo 11',nr:'NR-15', tipo:'ins'},
+  'nr15-a12': {nome:'Poeiras Minerais',                     anexo:'Anexo 12',nr:'NR-15', tipo:'ins'},
+  'nr15-a13': {nome:'Agentes Químicos por Atividade',       anexo:'Anexo 13',nr:'NR-15', tipo:'ins'},
+  'nr15-a13a':{nome:'Benzeno e Compostos',                  anexo:'Anexo 13-A',nr:'NR-15',tipo:'ins'},
+  'nr15-a14': {nome:'Agentes Biológicos',                   anexo:'Anexo 14',nr:'NR-15', tipo:'ins'},
+  'nr16-a1':  {nome:'Periculosidade — Explosivos',          anexo:'Anexo 1', nr:'NR-16', tipo:'peri'},
+  'nr16-a2':  {nome:'Periculosidade — Inflamáveis',         anexo:'Anexo 2', nr:'NR-16', tipo:'peri'},
+  'nr16-a3a': {nome:'Periculosidade — Energia Elétrica',    anexo:'Anexo 3', nr:'NR-16', tipo:'peri'},
+  'nr16-a3b': {nome:'Periculosidade — Rad. Ionizantes',     anexo:'Anexo 3', nr:'NR-16', tipo:'peri'},
+  'nr16-a3c': {nome:'Periculosidade — Segurança Pessoal',   anexo:'Anexo 3', nr:'NR-16', tipo:'peri'},
+  'nr16-a5':  {nome:'Periculosidade — Motocicleta',         anexo:'Anexo 5', nr:'NR-16', tipo:'peri'},
+};
+
+// Mapeia id do iPad → id do storage de textos
+const AGENTE_ID_MAP = {
+  'nr15-a1':'ag_nr15_a1','nr15-a2':'ag_nr15_a2','nr15-a3':'ag_nr15_a3',
+  'nr15-a5':'ag_nr15_a5','nr15-a6':'ag_nr15_a6','nr15-a7':'ag_nr15_a7',
+  'nr15-a8':'ag_nr15_a8','nr15-a9':'ag_nr15_a9','nr15-a10':'ag_nr15_a10',
+  'nr15-a11':'ag_nr15_a11','nr15-a12':'ag_nr15_a12','nr15-a13':'ag_nr15_a13',
+  'nr15-a13a':'ag_nr15_a13a','nr15-a14':'ag_nr15_a14',
+  'nr16-a1':'ag_nr16_a1','nr16-a2':'ag_nr16_a2','nr16-a3a':'ag_nr16_a3a',
+  'nr16-a3b':'ag_nr16_a3b','nr16-a3c':'ag_nr16_a3c','nr16-a5':'ag_nr16_a5',
+};
+
+// ═══════════════════════════════════════════
+// LISTA DE PROCESSOS
+// ═══════════════════════════════════════════
+function renderLista() {
+  const el = document.getElementById('lista-processos');
+  if (!processos.length) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text3);font-size:13px;">Nenhum processo.<br>Importe pelo app iPad.</div>`;
+    return;
+  }
+  el.innerHTML = processos.map(p => {
+    const obj = p.objeto || 'insalubridade';
+    const tagCls = obj==='insalubridade'?'tag-ins':obj==='periculosidade'?'tag-peri':'tag-ambos';
+    const tagTxt = obj==='insalubridade'?'Insalub.':obj==='periculosidade'?'Periculosidade':'Ambos';
+    const temDil = p.diligencia ? 'tag-ok' : 'tag-pend';
+    const dilTxt = p.diligencia ? '✓ Diligência' : '⏳ Sem diligência';
+    return `<div class="proc-item ${processoAtual?.id===p.id?'active':''}" onclick="selecionarProcesso('${p.id}')">
+      <div class="proc-num">${p.numero||'—'}</div>
+      <div class="proc-nome">${p.reclamante||'—'}</div>
+      <div class="proc-empresa">${p.reclamada||'—'}</div>
+      <div class="proc-meta">
+        <span class="proc-tag ${tagCls}">${tagTxt}</span>
+        <span class="proc-tag ${temDil}">${dilTxt}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// SELECIONAR PROCESSO
+// ═══════════════════════════════════════════
+function selecionarProcesso(id) {
+  processoAtual = processos.find(p => p.id === id);
+  if (!processoAtual) return;
+  laudoGerado = false;
+  renderLista();
+  renderRevisao();
+  document.getElementById('empty-principal').style.display = 'none';
+  document.getElementById('painel-processo').style.display = 'flex';
+  mudarTab('revisao', document.querySelectorAll('.tab-btn')[0]);
+  document.getElementById('status-bar').textContent = processoAtual.numero || '';
+  document.getElementById('btn-exportar').disabled = true;
+  document.getElementById('previa-status').textContent = 'Prévia não gerada ainda.';
+  document.getElementById('previa-container').innerHTML = `<div class="empty-area"><div class="empty-icon">📄</div><div class="empty-title">Prévia não gerada</div><div class="empty-sub">Clique em "Gerar prévia do laudo" para visualizar.</div></div>`;
+}
+
+// ═══════════════════════════════════════════
+// RENDERIZAR REVISÃO
+// ═══════════════════════════════════════════
+function renderRevisao() {
+  const p = processoAtual;
+  if (!p) return;
+  const d = p.diligencia || {};
+  const agentes = (d.agentes || []);
+
+  // Calcula prescrição
+  let prescricaoHtml = '';
+  if (p.autuacao) {
+    const dtAut = new Date(p.autuacao);
+    const dtPresc = new Date(dtAut);
+    dtPresc.setFullYear(dtPresc.getFullYear() - 5);
+    prescricaoHtml = `<div class="alerta"><span class="alerta-icon">⚠</span>
+      <span>Prescrição: períodos anteriores a <b>${dtPresc.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</b> podem estar prescritos. Verifique no tópico 4.</span>
+    </div>`;
+  }
+
+  // Alertas de textos faltando
+  const obj = p.objeto || 'insalubridade';
+  const alertas = [];
+  if (!TEXTOS[`topico1_${obj}`]) alertas.push(`Texto do Tópico 1 (${obj}) não cadastrado`);
+  if (!TEXTOS['topico2'])        alertas.push('Texto do Tópico 2 não cadastrado');
+  if (!TEXTOS[`topico3_ins`] && (obj==='insalubridade'||obj==='ambos')) alertas.push('Texto Tópico 3 — Insalubridade não cadastrado');
+  if (!TEXTOS[`topico3_peri`] && (obj==='periculosidade'||obj==='ambos')) alertas.push('Texto Tópico 3 — Periculosidade não cadastrado');
+  agentes.forEach(ag => {
+    const sid = AGENTE_ID_MAP[ag.id];
+    if (sid && !TEXTOS[`${sid}_met`]) alertas.push(`Metodologia (tóp. 8) não cadastrada: ${ag.nome||ag.id}`);
+    if (sid && !TEXTOS[`${sid}_res`]) alertas.push(`Abertura do resultado (tóp. 9) não cadastrada: ${ag.nome||ag.id}`);
+  });
+
+  const alertasHtml = alertas.length
+    ? `<div class="alerta"><span class="alerta-icon">⚠</span><div><b>Textos padrão faltando:</b><ul style="margin:4px 0 0 16px;">${alertas.map(a=>`<li>${a}</li>`).join('')}</ul></div></div>`
+    : `<div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:var(--r2);padding:9px 14px;font-size:12px;color:var(--green);margin-bottom:10px;">✓ Todos os textos padrão necessários estão cadastrados.</div>`;
+
+  document.getElementById('revisao-content').innerHTML = `
+    ${alertasHtml}
+    ${prescricaoHtml}
+
+    <!-- Dados do processo -->
+    <div class="sec-card">
+      <div class="sec-card-header">
+        <span class="sec-card-title">Dados do processo</span>
+        <span class="sec-card-badge tag-ins">${obj==='insalubridade'?'Insalubridade':obj==='periculosidade'?'Periculosidade':'Insalub. + Periculosidade'}</span>
+      </div>
+      <div class="field-grid">
+        <div class="field-item"><label>Nº do processo</label><input type="text" id="rv-numero" value="${esc(p.numero)}" oninput="atualizarCampo('numero',this.value)"></div>
+        <div class="field-item"><label>Vara</label><input type="text" id="rv-vara" value="${esc(p.vara)}" oninput="atualizarCampo('vara',this.value)"></div>
+        <div class="field-item"><label>Reclamante</label><input type="text" id="rv-reclamante" value="${esc(p.reclamante)}" oninput="atualizarCampo('reclamante',this.value)"></div>
+        <div class="field-item"><label>Reclamada</label><input type="text" id="rv-reclamada" value="${esc(p.reclamada)}" oninput="atualizarCampo('reclamada',this.value)"></div>
+        <div class="field-item"><label>Cidade</label><input type="text" id="rv-cidade" value="${esc(p.cidade)}" oninput="atualizarCampo('cidade',this.value)"></div>
+        <div class="field-item"><label>Data da perícia</label><input type="date" id="rv-data" value="${p.data_pericia||''}" oninput="atualizarCampo('data_pericia',this.value)"></div>
+        <div class="field-item"><label>Horário</label><input type="time" id="rv-hora" value="${p.horario||''}" oninput="atualizarCampo('horario',this.value)"></div>
+        <div class="field-item"><label>Objeto da perícia</label>
+          <select id="rv-objeto" onchange="atualizarCampo('objeto',this.value)">
+            <option value="insalubridade" ${obj==='insalubridade'?'selected':''}>Insalubridade</option>
+            <option value="periculosidade" ${obj==='periculosidade'?'selected':''}>Periculosidade</option>
+            <option value="ambos" ${obj==='ambos'?'selected':''}>Insalubridade e Periculosidade</option>
+          </select>
+        </div>
+        <div class="field-item field-full"><label>Endereço da diligência</label><input type="text" id="rv-end" value="${esc(p.endereco)}" oninput="atualizarCampo('endereco',this.value)"></div>
+      </div>
+    </div>
+
+    <!-- Datas funcionais -->
+    <div class="sec-card">
+      <div class="sec-card-header"><span class="sec-card-title">Dados funcionais — Tópico 4</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Pela Reclamante</div>
+      <div class="field-grid">
+        <div class="field-item"><label>Função declarada</label><input type="text" id="rv-func-rec" value="${esc(d.func_reclamante||p.funcao)}" oninput="atualizarDil('func_reclamante',this.value)"></div>
+        <div class="field-item"><label>Admissão</label><input type="date" id="rv-adm-rec" value="${d.admissao_reclamante||p.admissao||''}" oninput="atualizarDil('admissao_reclamante',this.value)"></div>
+        <div class="field-item"><label>Demissão</label><input type="date" id="rv-dem-rec" value="${d.demissao_reclamante||p.demissao||''}" oninput="atualizarDil('demissao_reclamante',this.value)"></div>
+        <div class="field-item"><label>Autuação do processo</label><input type="date" id="rv-aut" value="${p.autuacao||''}" oninput="atualizarCampo('autuacao',this.value)"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:12px 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Pela Reclamada</div>
+      <div class="field-grid">
+        <div class="field-item"><label>Função (reclamada)</label><input type="text" value="${esc(d.func_reclamada)}" oninput="atualizarDil('func_reclamada',this.value)"></div>
+        <div class="field-item"><label>Admissão (reclamada)</label><input type="date" value="${d.admissao_reclamada||''}" oninput="atualizarDil('admissao_reclamada',this.value)"></div>
+        <div class="field-item field-full"><label>Demissão (reclamada)</label><input type="date" value="${d.demissao_reclamada||''}" oninput="atualizarDil('demissao_reclamada',this.value)"></div>
+      </div>
+    </div>
+
+    <!-- Atividades e EPIs -->
+    <div class="sec-card">
+      <div class="sec-card-header"><span class="sec-card-title">Atividades e EPIs — Tópicos 4 e 5</span></div>
+      <div class="field-grid">
+        <div class="field-item field-full"><label>Atividades exercidas (pelo autor)</label><textarea oninput="atualizarDil('ativ_autor',this.value)">${esc(d.ativ_autor)}</textarea></div>
+        <div class="field-item field-full"><label>Atividades exercidas (pela empresa)</label><textarea oninput="atualizarDil('ativ_empresa',this.value)">${esc(d.ativ_empresa)}</textarea></div>
+        <div class="field-item field-full"><label>EPIs declarados (informação verbal)</label><textarea oninput="atualizarDil('epis',this.value)">${esc(d.epis)}</textarea></div>
+        <div class="field-item field-full"><label>Treinamentos</label><textarea oninput="atualizarDil('treinamentos',this.value)">${esc(d.treinamentos)}</textarea></div>
+      </div>
+    </div>
+
+    <!-- Agentes identificados -->
+    <div class="sec-card">
+      <div class="sec-card-header"><span class="sec-card-title">Agentes identificados — Tópicos 7, 8 e 9</span></div>
+      <div style="margin-bottom:8px;">
+        ${agentes.length
+          ? agentes.map(ag => {
+              const sid = AGENTE_ID_MAP[ag.id||''];
+              const temTxt = sid && TEXTOS[`${sid}_met`] && TEXTOS[`${sid}_res`];
+              const temImg = sid && TEXTOS[`img_${sid}`];
+              return `<span class="agente-chip ${(ag.nr||'').includes('16')?'nr16':'nr15'}">
+                ${temImg?'🖼 ':'⬜ '}${temTxt?'✓':'⚠'} ${ag.nome||ag.id}
+              </span>`;
+            }).join('')
+          : '<span style="color:var(--text3);font-size:13px;">Nenhum agente selecionado.</span>'
+        }
+      </div>
+      <div style="font-size:11px;color:var(--text3);">🖼 = imagem cadastrada · ✓ = textos 8 e 9 cadastrados · ⚠ = texto faltando</div>
+    </div>
+
+    <!-- Partes presentes -->
+    <div class="sec-card">
+      <div class="sec-card-header"><span class="sec-card-title">Partes presentes — Tópico 2</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Pela Reclamante</div>
+          ${(d.partes_reclamante||[]).map(part=>`
+            <div style="font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">
+              <b style="color:var(--text)">${esc(part.nome)||'—'}</b>
+              ${part.mister?`<span style="color:var(--text3)"> · ${esc(part.mister)}</span>`:''}
+            </div>`).join('') || '<div style="font-size:12px;color:var(--text3);">Nenhum registrado.</div>'}
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Pela Reclamada</div>
+          ${(d.partes_reclamada||[]).map(part=>`
+            <div style="font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">
+              <b style="color:var(--text)">${esc(part.nome)||'—'}</b>
+              ${part.mister?`<span style="color:var(--text3)"> · ${esc(part.mister)}</span>`:''}
+              ${part.admissao?`<span style="color:var(--text3);font-family:var(--mono);font-size:10px;"> ${esc(part.admissao)}</span>`:''}
+            </div>`).join('') || '<div style="font-size:12px;color:var(--text3);">Nenhum registrado.</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// ATUALIZAR CAMPOS
+// ═══════════════════════════════════════════
+function atualizarCampo(campo, val) {
+  if (!processoAtual) return;
+  processoAtual[campo] = val;
+  salvarProcessos();
+}
+function atualizarDil(campo, val) {
+  if (!processoAtual) return;
+  if (!processoAtual.diligencia) processoAtual.diligencia = {};
+  processoAtual.diligencia[campo] = val;
+  salvarProcessos();
+}
+function salvarProcessos() {
+  const idx = processos.findIndex(p => p.id === processoAtual.id);
+  if (idx >= 0) processos[idx] = processoAtual;
+  saveProcessos(processos);
+}
+
+// ═══════════════════════════════════════════
+// GERAR PRÉVIA HTML
+// ═══════════════════════════════════════════
+function gerarPrevia() {
+  if (!processoAtual) return;
+  showLoading('Montando prévia...');
+  TEXTOS = loadTextos();
+  setTimeout(() => {
+    try {
+      const html = montarLaudoHTML(processoAtual);
+      document.getElementById('previa-container').innerHTML = `<div class="previa-page">${html}</div>`;
+      laudoGerado = true;
+      document.getElementById('btn-exportar').disabled = false;
+      document.getElementById('previa-status').textContent = `Prévia gerada — ${new Date().toLocaleTimeString('pt-BR')}`;
+      mudarTab('previa', document.querySelectorAll('.tab-btn')[1]);
+    } catch(e) {
+      toast('Erro ao gerar prévia: ' + e.message, '');
+      console.error(e);
+    }
+    hideLoading();
+  }, 200);
+}
+
+// ═══════════════════════════════════════════
+// MONTAR HTML DO LAUDO
+// ═══════════════════════════════════════════
+function montarLaudoHTML(p) {
+  const d = p.diligencia || {};
+  const obj = p.objeto || 'insalubridade';
+  const agentes = (d.agentes || []);
+  const agIns  = agentes.filter(a => (AGENTES_MAP[a.id]?.tipo||'ins') === 'ins');
+  const agPeri = agentes.filter(a => (AGENTES_MAP[a.id]?.tipo||'ins') === 'peri');
+
+  function subs(html) {
+    if (!html) return '';
+    const dtPericia = p.data_pericia ? new Date(p.data_pericia+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '{{DATA_DILIGENCIA}}';
+    return html
+      .replace(/{{RECLAMANTE}}/g,  p.reclamante||'{{RECLAMANTE}}')
+      .replace(/{{RECLAMADA}}/g,   p.reclamada||'{{RECLAMADA}}')
+      .replace(/{{VARA}}/g,        p.vara||'{{VARA}}')
+      .replace(/{{PROCESSO}}/g,    p.numero||'{{PROCESSO}}')
+      .replace(/{{ENDERECO}}/g,    p.endereco||'{{ENDERECO}}')
+      .replace(/{{CIDADE}}/g,      p.cidade||'{{CIDADE}}')
+      .replace(/{{DATA_DILIGENCIA}}/g, dtPericia)
+      .replace(/{{HORARIO}}/g,     p.horario||'{{HORARIO}}')
+      .replace(/<var>/g,'<var>').replace(/<\/var>/g,'</var>');
+  }
+
+  function titulo(num, txt) {
+    return `<div class="secao-titulo">${num} . ${txt}</div>`;
+  }
+  function subtitulo(num, txt) {
+    return `<div class="subsecao-titulo">${num} . ${txt}</div>`;
+  }
+
+  let html = '';
+
+  // ── CABEÇALHO ──
+  html += `<div class="laudo-header">
+    <div class="perito-nome">${p.perito_nome||'CARLOS EDUARDO SILVA LAZARINI'}</div>
+    <div class="perito-sub">Eng. de Produção, Segurança do Trabalho e Ergonomista<br>${p.perito_crea||'CREA-SP 506.938.283.5'}</div>
+  </div>
+  <div style="text-align:center;margin-bottom:16px;">
+    <div style="font-size:16pt;font-weight:700;">LAUDO PERICIAL</div>
+    <div style="margin-top:6px;font-size:11pt;">PROCESSO Nº: <b>${p.numero||'—'}</b></div>
+    <div style="font-size:11pt;">RECLAMANTE: <b>${(p.reclamante||'').toUpperCase()}</b></div>
+    <div style="font-size:11pt;">RECLAMADA: <b>${(p.reclamada||'').toUpperCase()}</b></div>
+  </div>`;
+
+  // ── TÓPICO 1 ──
+  html += titulo(1, obj==='insalubridade' ? 'OBJETO DA PERÍCIA' : obj==='periculosidade' ? 'OBJETO DA PERÍCIA' : 'OBJETO DA PERÍCIA');
+  html += subs(TEXTOS[`topico1_${obj}`] || `<p><var>{{TEXTO_TOPICO1_${obj.toUpperCase()}}}</var></p>`);
+
+  // ── TÓPICO 2 ──
+  html += titulo(2, 'DILIGÊNCIA E FONTES DE INFORMAÇÃO');
+  html += subs(TEXTOS['topico2'] || '<p><var>{{TEXTO_TOPICO2}}</var></p>');
+
+  // Tabela pela reclamante
+  if ((d.partes_reclamante||[]).length) {
+    html += `<div style="font-size:11pt;font-weight:700;margin:10px 0 4px;text-align:center;">P E L A &nbsp; R E C L A M A N T E</div>
+    <table class="tabela-partes"><thead><tr><th>Nome</th><th>Qualidade</th></tr></thead><tbody>
+    ${(d.partes_reclamante||[]).map(pt=>`<tr><td>${esc(pt.nome)}</td><td>${esc(pt.mister)}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+  // Tabela pela reclamada
+  if ((d.partes_reclamada||[]).length) {
+    html += `<div style="font-size:11pt;font-weight:700;margin:10px 0 4px;text-align:center;">P E L A &nbsp; R E C L A M A D A</div>
+    <table class="tabela-partes"><thead><tr><th>Nome</th><th>Qualidade</th><th>Admissão</th></tr></thead><tbody>
+    ${(d.partes_reclamada||[]).map(pt=>`<tr><td>${esc(pt.nome)}</td><td>${esc(pt.mister)}</td><td>${esc(pt.admissao)}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  // 2.1 Ocorrências
+  html += subtitulo('2.1', 'OCORRÊNCIAS DURANTE A DILIGÊNCIA PERICIAL');
+  if (d.ocorrencia && d.ocorrencia_texto) {
+    html += `<p>${esc(d.ocorrencia_texto)}</p>`;
+  } else {
+    html += subs(TEXTOS['topico2_1'] || '<p>Não houve ocorrências durante a diligência pericial.</p>');
+  }
+
+  // ── TÓPICO 3 ──
+  html += titulo(3, 'LEGISLAÇÃO APLICADA');
+  if (obj === 'ambos') {
+    html += subtitulo('3.1', 'INSALUBRIDADE');
+    html += subs(TEXTOS['topico3_ins'] || '<p><var>{{TEXTO_TOPICO3_INS}}</var></p>');
+    html += subtitulo('3.2', 'PERICULOSIDADE');
+    html += subs(TEXTOS['topico3_peri'] || '<p><var>{{TEXTO_TOPICO3_PERI}}</var></p>');
+  } else {
+    html += subs(TEXTOS[`topico3_${obj}`] || `<p><var>{{TEXTO_TOPICO3_${obj.toUpperCase()}}}</var></p>`);
+  }
+
+  // ── TÓPICO 4 ──
+  html += titulo(4, 'DADOS FUNCIONAIS DO RECLAMANTE');
+  html += subtitulo('4.1', 'PELA RECLAMANTE');
+  html += `<table class="tabela-partes"><thead><tr><th>Função</th><th>Data de admissão</th><th>Data de demissão</th></tr></thead>
+    <tbody><tr><td>${esc(d.func_reclamante||p.funcao)}</td><td>${fmtData(d.admissao_reclamante||p.admissao)}</td><td>${fmtData(d.demissao_reclamante||p.demissao)}</td></tr></tbody></table>`;
+  if (d.ativ_autor) html += `<p>${esc(d.ativ_autor)}</p>`;
+
+  html += subtitulo('4.2', 'PELA RECLAMADA');
+  html += `<table class="tabela-partes"><thead><tr><th>Função</th><th>Data de admissão</th><th>Data de demissão</th></tr></thead>
+    <tbody><tr><td>${esc(d.func_reclamada||'—')}</td><td>${fmtData(d.admissao_reclamada)}</td><td>${fmtData(d.demissao_reclamada)}</td></tr></tbody></table>`;
+  if (d.ativ_empresa) html += `<p>${esc(d.ativ_empresa)}</p>`;
+
+  // Prescrição
+  if (p.autuacao) {
+    const dtAut = new Date(p.autuacao+'T12:00:00');
+    const dtPresc = new Date(dtAut); dtPresc.setFullYear(dtPresc.getFullYear()-5);
+    html += `<div class="prescricao-aviso">⚠ Prescrição quinquenal: períodos anteriores a <b>${dtPresc.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</b> podem estar prescritos (autuação em ${fmtData(p.autuacao)}).</div>`;
+  }
+
+  // ── TÓPICO 5 ──
+  html += titulo(5, 'EQUIPAMENTO DE PROTEÇÃO INDIVIDUAL (EPI)');
+  html += subs(TEXTOS['topico5'] || '<p><var>{{TEXTO_TOPICO5}}</var></p>');
+  if (d.epis) html += `<p><b>EPIs declarados verbalmente:</b> ${esc(d.epis)}</p>`;
+  if (d.treinamentos) html += `<p><b>Treinamentos realizados:</b> ${esc(d.treinamentos)}</p>`;
+
+  // ── TÓPICO 6 ──
+  html += titulo(6, 'LOCAL DE TRABALHO');
+  html += subs(TEXTOS['topico6'] || `<p>As atividades laborais do Reclamante eram desenvolvidas nas dependências da Reclamada, situada à <b>${p.endereco||'{{ENDERECO}}'}</b>, município de <b>${p.cidade||'{{CIDADE}}'}</b>.</p>`);
+
+  // ── TÓPICO 7 ──
+  html += titulo(7, 'IDENTIFICAÇÃO DA PRESENÇA DE AGENTES INSALUBRES E/OU PERIGOSOS');
+  html += subs(TEXTOS[`topico7_intro_${obj}`] || TEXTOS['topico7_intro_ambos'] || '<p><var>{{TEXTO_TOPICO7_INTRO}}</var></p>');
+
+  // Bloco de imagens/cards dos agentes
+  if (agentes.length) {
+    html += `<div class="agentes-bloco">`;
+    agentes.forEach(ag => {
+      const sid = AGENTE_ID_MAP[ag.id];
+      const imgData = sid ? TEXTOS[`img_${sid}`] : null;
+      const meta = AGENTES_MAP[ag.id] || {};
+      if (imgData) {
+        html += `<div class="agente-card"><img src="${imgData.data}" style="width:100%;max-height:80px;object-fit:contain;margin-bottom:4px;"><div>${ag.nome||meta.nome||ag.id}</div></div>`;
+      } else {
+        html += `<div class="agente-card"><div style="height:60px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:10pt;color:#999;margin-bottom:4px;">sem imagem</div><div>${ag.nome||meta.nome||ag.id}</div></div>`;
+      }
+    });
+    html += `</div>`;
+  }
+
+  html += subs(TEXTOS['topico7_fechamento'] || '<p>Não serão avaliados os demais agentes potencialmente insalubres e/ou perigosos devido à inexistência de exposição/contato, à exposição/contato ser eventual ou à sua concentração/intensidade ser considerada desprezível.</p>');
+
+  // ── TÓPICO 8 — METODOLOGIA ──
+  html += titulo(8, 'METODOLOGIA');
+  agentes.forEach((ag, i) => {
+    const sid = AGENTE_ID_MAP[ag.id];
+    const meta = AGENTES_MAP[ag.id] || {};
+    html += subtitulo(`8.${i+1}`, `AGENTE ${(ag.nome||meta.nome||ag.id).toUpperCase()}`);
+    html += subs(sid && TEXTOS[`${sid}_met`]
+      ? TEXTOS[`${sid}_met`]
+      : `<p><var>{{METODOLOGIA_${(ag.id||'').toUpperCase()}}}</var></p>`);
+  });
+
+  // ── TÓPICO 9 — RESULTADO ──
+  html += titulo(9, 'RESULTADO DAS AVALIAÇÕES');
+  agentes.forEach((ag, i) => {
+    const sid = AGENTE_ID_MAP[ag.id];
+    const meta = AGENTES_MAP[ag.id] || {};
+    html += subtitulo(`9.${i+1}`, `AGENTE ${(ag.nome||meta.nome||ag.id).toUpperCase()}`);
+    html += subs(sid && TEXTOS[`${sid}_res`]
+      ? TEXTOS[`${sid}_res`]
+      : `<p><var>{{RESULTADO_${(ag.id||'').toUpperCase()}}}</var></p>`);
+    html += `<p style="background:#fffbea;border:1px solid #fcd34d;border-radius:3px;padding:8px 12px;text-indent:0;font-size:10pt;color:#92400e;">✏ Insira aqui os dados e tabelas da avaliação.</p>`;
+  });
+
+  // ── TÓPICO 10 — CONCLUSÃO ──
+  html += titulo(10, 'CONCLUSÃO PERICIAL');
+  html += `<p style="background:#fffbea;border:1px solid #fcd34d;border-radius:3px;padding:8px 12px;text-indent:0;font-size:10pt;color:#92400e;">✏ Elaborar a conclusão pericial com base nos resultados das avaliações.</p>`;
+
+  // ── TÓPICO 11 — HONORÁRIOS ──
+  html += titulo(11, 'HONORÁRIOS PERICIAIS');
+  html += subs(TEXTOS['topico11_honorarios'] || '<p><var>{{TEXTO_HONORARIOS}}</var></p>');
+
+  // ── ENCERRAMENTO ──
+  html += titulo(12, 'ENCERRAMENTO');
+  const dtLaudo = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  html += subs((TEXTOS['encerramento'] || '<p>Em nada mais havendo, é dado por encerrado o presente laudo pericial.</p><p>{{CIDADE}}, {{DATA_LAUDO}}.</p>')
+    .replace(/{{DATA_LAUDO}}/g, dtLaudo));
+
+  return html;
+}
+
+// ═══════════════════════════════════════════
+// EXPORTAR DOCX (via servidor Node)
+// ═══════════════════════════════════════════
+// EXPORTAR DOCX — via servidor local
+// ═══════════════════════════════════════════
+const SERVIDOR_URL = 'http://localhost:3000';
+let servidorOnline = false;
+
+async function verificarServidor() {
+  document.getElementById('servidor-status').textContent = 'Verificando...';
+  try {
+    const r = await fetch(`${SERVIDOR_URL}/api/status`, { signal: AbortSignal.timeout(2000) });
+    servidorOnline = r.ok;
+  } catch {
+    servidorOnline = false;
+  }
+  const badge  = document.getElementById('servidor-badge');
+  const status = document.getElementById('servidor-status');
+  if (servidorOnline) {
+    badge.style.background  = 'rgba(34,197,94,.1)';
+    badge.style.color       = 'var(--green)';
+    badge.style.borderColor = 'rgba(34,197,94,.2)';
+    status.textContent = 'Servidor online';
+  } else {
+    badge.style.background  = 'rgba(245,158,11,.1)';
+    badge.style.color       = 'var(--amber)';
+    badge.style.borderColor = 'rgba(245,158,11,.2)';
+    status.textContent = 'Servidor offline';
+  }
+  const btn = document.getElementById('btn-exportar');
+  if (btn && laudoGerado) btn.disabled = false;
+}
+
+async function exportarDocx() {
+  if (!processoAtual) return;
+
+  // Monta payload com processo + diligência + textos
+  const TEXTOS_ATUAL = loadTextos();
+  const payload = {
+    processo: { ...processoAtual },
+    diligencia: processoAtual.diligencia || {},
+    textos: TEXTOS_ATUAL,
+  };
+  // Remove a diligência duplicada do processo
+  delete payload.processo.diligencia;
+
+  // Tenta via servidor local
+  if (servidorOnline) {
+    try {
+      showLoading('Gerando DOCX...');
+      const resp = await fetch(`${SERVIDOR_URL}/api/gerar-docx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(30000),
+      });
+      hideLoading();
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({erro: resp.statusText}));
+        toast('Erro ao gerar DOCX: ' + err.erro, '');
+        return;
+      }
+      const blob = await resp.blob();
+      const reclamante = (processoAtual.reclamante||'processo')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_').substring(0,40);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Laudo_${reclamante}.docx`;
+      a.click(); URL.revokeObjectURL(url);
+      toast('✓ DOCX gerado e baixado com sucesso!', 'ok');
+      return;
+    } catch(e) {
+      hideLoading();
+      servidorOnline = false;
+    }
+  }
+
+  // Servidor offline — mostra instruções
+  mostrarInstrucoesServidor();
+}
+
+function mostrarInstrucoesServidor() {
+  document.getElementById('modal-servidor').classList.add('show');
+}
+function fecharModalServidor() {
+  document.getElementById('modal-servidor').classList.remove('show');
+  verificarServidor();
+}
+
+// ═══════════════════════════════════════════
+// DADOS DE DEMONSTRAÇÃO
+// ═══════════════════════════════════════════
+function carregarDadosTeste() {
+  processos = [{
+    id: 'demo_001',
+    numero: '0000952-91.2025.5.09.0659',
+    reclamante: 'GÍLSON GERALDO PERPETUO DA SILVA',
+    reclamada: 'DALBA ENGENHARIA E EMPREENDIMENTOS LTDA E OUTROS',
+    vara: '2ª VARA DO TRABALHO DE GUARAPUAVA/PR',
+    cidade: 'Guarapuava',
+    endereco: 'Av. Pref. Moacyr Júlio Silvestri, n. 830, Centro, Guarapuava/PR',
+    data_pericia: '2026-03-05',
+    horario: '13:30',
+    admissao: '2019-06-01',
+    demissao: '2025-05-13',
+    autuacao: '2025-07-29',
+    funcao: 'SOLDADOR',
+    objeto: 'insalubridade',
+    diligencia: {
+      partes_reclamante: [{nome:'Gílson Geraldo Perpetuo da Silva', mister:'Reclamante'}],
+      partes_reclamada: [
+        {nome:'Douglas Frosi', mister:'EST', admissao:'06/2019'},
+        {nome:'Giovani de Boaventura', mister:'Advogado', admissao:''},
+        {nome:'Vilmar de Jesus Padilha', mister:'Encarregado', admissao:'02/2019'},
+        {nome:'Leandro Alves da Silva', mister:'Advogado', admissao:''},
+      ],
+      func_reclamante: 'SOLDADOR',
+      admissao_reclamante: '2019-06-01',
+      demissao_reclamante: '2025-05-13',
+      func_reclamada: 'SOLDADOR',
+      admissao_reclamada: '2019-06-01',
+      demissao_reclamada: '2025-05-13',
+      ativ_autor: 'O reclamante informou que exercia atividades de soldagem elétrica e oxiacetilênica, realizando cortes e uniões de peças metálicas de grande porte, exposto a ruído elevado de equipamentos e à radiação não ionizante proveniente do arco elétrico de soldagem.',
+      ativ_empresa: 'A reclamada confirmou que o colaborador exercia função de soldador, realizando solda elétrica e oxiacetilênica, operando equipamentos de corte e dobra metálica.',
+      epis: 'Protetor auricular, luvas de raspa, avental de raspa, máscara de solda, óculos de proteção',
+      treinamentos: 'NR-10, CIPA',
+      agentes: [
+        {id:'nr15-a1', nome:'Agente Físico Ruído contínuo ou intermitente', nr:'NR-15', anexo:'Anexo 1'},
+        {id:'nr15-a7', nome:'Radiações não ionizantes', nr:'NR-15', anexo:'Anexo 7'},
+      ],
+      ocorrencia: false,
+      ocorrencia_texto: '',
+    }
+  }];
+  saveProcessos(processos);
+  renderLista();
+  toast('✓ Processo de demonstração carregado!', 'ok');
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtData(s) {
+  if (!s) return '—';
+  const d = new Date(s+'T12:00:00');
+  return isNaN(d) ? s : d.toLocaleDateString('pt-BR');
+}
+function mudarTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('tab-' + id);
+  if (el) el.classList.add('active');
+}
+function showLoading(msg) {
+  document.getElementById('loading-msg').textContent = msg||'Aguarde...';
+  document.getElementById('loading').classList.add('show');
+}
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show '+(type||'');
+  clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+function navTo(t) { toast(`Módulo "${t}" — abra o arquivo correspondente.`,''); }
+
+// INIT
+renderLista();
+verificarServidor();
+setInterval(verificarServidor, 15000); // Verifica a cada 15s
+</script>
+</body>
+</html>
