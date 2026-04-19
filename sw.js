@@ -1,12 +1,14 @@
 // PeríciaLab — Service Worker
-// Versão do cache — incremente para forçar atualização
-const CACHE_VERSION = 'pericia-v1';
+const CACHE_VERSION = 'pericia-v2';
 
-// Arquivos que serão cacheados para uso offline
 const ARQUIVOS_CACHE = [
-  '/app-ipad-pericia.html',
-  '/supabase_client.js',
-  '/manifest.json',
+  '/Pericia-Lab/app-ipad-pericia.html',
+  '/Pericia-Lab/supabase_client.js',
+  '/Pericia-Lab/manifest.json',
+  '/Pericia-Lab/icon-192.png',
+  '/Pericia-Lab/icon-512.png',
+  '/Pericia-Lab/apple-touch-icon.png',
+  '/Pericia-Lab/index.html',
 ];
 
 // ── INSTALL: baixa e cacheia todos os arquivos ────────────────
