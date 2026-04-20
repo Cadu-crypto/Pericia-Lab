@@ -38,15 +38,28 @@
     --mono: 'IBM Plex Mono', monospace;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%; height: 100dvh;
+    overflow: hidden; /* impede o body de rolar */
+    position: fixed;  /* ancora o viewport no iOS */
+    width: 100%;
+  }
 
   body {
     font-family: var(--font);
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
     font-size: 15px;
     line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Container principal que rola, não o body */
+  #app-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* ── TOP BAR ── */
@@ -69,8 +82,9 @@
   .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
   /* ── SCREENS ── */
-  .screen { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
+  .screen { display: none; padding: 20px 20px 0; max-width: 900px; margin: 0 auto; }
   .screen.active { display: block; }
+  .page-pad { padding-bottom: 20px; }
 
   /* ── CARDS ── */
   .card {
@@ -316,20 +330,14 @@
 
   /* ── NAV BOTTOM ── */
   .bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: rgba(15,17,23,0.96); backdrop-filter: blur(12px);
+    position: sticky; bottom: 0;
+    background: rgba(15,17,23,0.98);
     border-top: 1px solid var(--border);
-    display: flex; padding: 8px 20px 16px;
-    gap: 10px; max-width: 800px; margin: 0 auto;
-    transition: transform 0.15s ease;
+    display: flex; padding: 10px 20px 12px;
+    gap: 10px; max-width: 900px; margin: 0 auto;
+    z-index: 50;
   }
-  /* Quando teclado está ativo, bottom-nav sai de cena */
-  .bottom-nav.teclado-ativo {
-    transform: translateY(100%);
-  }
-  .page-pad { padding-bottom: 90px; }
-  /* Com teclado ativo, padding menor */
-  .teclado-ativo-body .page-pad { padding-bottom: 20px; }
+  .page-pad { padding-bottom: 20px; }
 
   /* ── HEADER PROCESSO ── */
   .processo-header {
@@ -387,7 +395,7 @@
 </head>
 <body>
 
-<!-- TOP BAR -->
+<!-- TOP BAR — fixo, fora do scroll -->
 <div class="topbar">
   <span class="topbar-title">⚖ Perícia</span>
   <div class="sync-badge offline" id="sync-badge">
@@ -395,6 +403,9 @@
     <span id="sync-text">Offline</span>
   </div>
 </div>
+
+<!-- CONTEÚDO ROLÁVEL -->
+<div id="app-scroll">
 
 <!-- BANNER DE INSTALAÇÃO PWA (aparece só no Safari, só na primeira vez) -->
 <div id="pwa-banner" style="display:none; background:rgba(59,130,246,0.12); border-bottom:1px solid rgba(59,130,246,0.25); padding:10px 20px; font-size:12px; color:#60a5fa; display:flex; align-items:center; gap:10px;">
@@ -613,6 +624,9 @@
     <button class="btn btn-ghost" id="btn-prev" onclick="prevStep()" style="display:none;">← Anterior</button>
     <button class="btn btn-primary btn-full" id="btn-next" onclick="nextStep()">Próximo →</button>
   </div>
+</div>
+
+<!-- Fecha conteúdo rolável -->
 </div>
 
 <!-- TOAST -->
@@ -1568,49 +1582,6 @@ function gerarUUID() {
   });
 }
 
-// ═══════════════════════════════════════════
-// TECLADO — evita que o iOS empurre a tela
-// ═══════════════════════════════════════════
-(function() {
-  const nav = () => document.querySelector('.bottom-nav');
-
-  // Detecta abertura/fechamento do teclado via visualViewport
-  if (window.visualViewport) {
-    let alturaAnterior = window.visualViewport.height;
-
-    window.visualViewport.addEventListener('resize', () => {
-      const altura = window.visualViewport.height;
-      const tecladoAberto = altura < alturaAnterior * 0.85;
-
-      // Esconde bottom-nav quando teclado aberto
-      const n = nav();
-      if (n) n.classList.toggle('teclado-ativo', tecladoAberto);
-      document.body.classList.toggle('teclado-ativo-body', tecladoAberto);
-
-      // Rola para o campo focado ficar visível
-      if (tecladoAberto) {
-        setTimeout(() => {
-          const focused = document.activeElement;
-          if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA')) {
-            focused.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 150);
-      }
-
-      alturaAnterior = altura;
-    });
-  }
-
-  // Fallback: ao focar qualquer input, rola para ele
-  document.addEventListener('focusin', e => {
-    const el = e.target;
-    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-      setTimeout(() => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 350); // aguarda teclado abrir
-    }
-  });
-})();
 // ═══════════════════════════════════════════
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').then(reg => {
