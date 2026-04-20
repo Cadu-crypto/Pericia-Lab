@@ -321,8 +321,15 @@
     border-top: 1px solid var(--border);
     display: flex; padding: 8px 20px 16px;
     gap: 10px; max-width: 800px; margin: 0 auto;
+    transition: transform 0.15s ease;
+  }
+  /* Quando teclado está ativo, bottom-nav sai de cena */
+  .bottom-nav.teclado-ativo {
+    transform: translateY(100%);
   }
   .page-pad { padding-bottom: 90px; }
+  /* Com teclado ativo, padding menor */
+  .teclado-ativo-body .page-pad { padding-bottom: 20px; }
 
   /* ── HEADER PROCESSO ── */
   .processo-header {
@@ -1424,7 +1431,48 @@ function gerarUUID() {
 }
 
 // ═══════════════════════════════════════════
-// SERVICE WORKER — registro para PWA offline
+// TECLADO — evita que o iOS empurre a tela
+// ═══════════════════════════════════════════
+(function() {
+  const nav = () => document.querySelector('.bottom-nav');
+
+  // Detecta abertura/fechamento do teclado via visualViewport
+  if (window.visualViewport) {
+    let alturaAnterior = window.visualViewport.height;
+
+    window.visualViewport.addEventListener('resize', () => {
+      const altura = window.visualViewport.height;
+      const tecladoAberto = altura < alturaAnterior * 0.85;
+
+      // Esconde bottom-nav quando teclado aberto
+      const n = nav();
+      if (n) n.classList.toggle('teclado-ativo', tecladoAberto);
+      document.body.classList.toggle('teclado-ativo-body', tecladoAberto);
+
+      // Rola para o campo focado ficar visível
+      if (tecladoAberto) {
+        setTimeout(() => {
+          const focused = document.activeElement;
+          if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA')) {
+            focused.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      }
+
+      alturaAnterior = altura;
+    });
+  }
+
+  // Fallback: ao focar qualquer input, rola para ele
+  document.addEventListener('focusin', e => {
+    const el = e.target;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350); // aguarda teclado abrir
+    }
+  });
+})();
 // ═══════════════════════════════════════════
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').then(reg => {
