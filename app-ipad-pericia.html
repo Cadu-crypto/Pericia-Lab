@@ -404,6 +404,33 @@
 </div>
 
 <!-- ══════════════════════════════════════════
+     SCREEN 0 — LOGIN
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-login" style="max-width:420px; padding-top:60px;">
+  <div style="text-align:center; margin-bottom:32px;">
+    <div style="width:64px;height:64px;background:var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;">⚖</div>
+    <div style="font-size:24px;font-weight:600;">PeríciaLab</div>
+    <div style="font-size:13px;color:var(--text2);margin-top:4px;">Entre para continuar</div>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter') fazerLoginApp()">
+    </div>
+    <div id="login-erro" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:var(--r2);padding:9px 12px;font-size:12px;color:var(--red);margin-bottom:12px;"></div>
+    <button class="btn btn-primary btn-full" id="btn-login-app" onclick="fazerLoginApp()">Entrar</button>
+    <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text3);">
+      Sem internet? <span style="color:var(--accent);cursor:pointer;" onclick="entrarOffline()">Continuar offline</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
      SCREEN 1 — LISTA DE PERÍCIAS DO DIA
 ══════════════════════════════════════════ -->
 <div class="screen active page-pad" id="screen-lista">
@@ -828,8 +855,78 @@ const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','
 async function init() {
   await initDB();
   pericias = await dbGetAll('pericias');
+
+  // Verifica se já tem token salvo
+  const token = localStorage.getItem('sb_token');
+  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
+
+  if (token && cfg.url) {
+    // Já logado — vai direto para a lista
+    goTo('screen-lista');
+  } else if (!navigator.onLine) {
+    // Offline sem login — entra offline direto
+    goTo('screen-lista');
+  } else {
+    // Precisa fazer login
+    goTo('screen-login');
+    return;
+  }
+
   renderLista();
   watchOnline();
+  renderAgentes();
+}
+
+async function fazerLoginApp() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const erroEl = document.getElementById('login-erro');
+  const btn = document.getElementById('btn-login-app');
+
+  if (!email || !senha) {
+    erroEl.textContent = 'Preencha e-mail e senha.';
+    erroEl.style.display = 'block'; return;
+  }
+
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  erroEl.style.display = 'none';
+
+  // Config padrão já embutida
+  const cfg = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const url  = cfg.url  || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+
+  try {
+    const r = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': anon },
+      body: JSON.stringify({ email, password: senha }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error_description || data.message || 'Erro ao entrar');
+
+    // Salva token e config
+    localStorage.setItem('sb_token', data.access_token);
+    localStorage.setItem('sb_config', JSON.stringify({ url, anon }));
+
+    // Vai para a lista
+    goTo('screen-lista');
+    renderLista();
+    watchOnline();
+    renderAgentes();
+    syncToCloud();
+
+  } catch(e) {
+    erroEl.textContent = e.message;
+    erroEl.style.display = 'block';
+  }
+  btn.textContent = 'Entrar'; btn.disabled = false;
+}
+
+function entrarOffline() {
+  // Sem login — só dados locais, sem sync
+  goTo('screen-lista');
+  renderLista();
   renderAgentes();
 }
 
