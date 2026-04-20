@@ -1041,15 +1041,16 @@ async function confirmarImport() {
 // ═══════════════════════════════════════════
 // DILIGÊNCIA — abrir processo
 // ═══════════════════════════════════════════
-function abrirDiligencia(id) {
+async function abrirDiligencia(id) {
   processoAtual = pericias.find(p => p.id === id);
   if (!processoAtual) return;
 
+  // Reseta estado
   partesReclamante = [];
-  partesReclamada = [];
-  agentesSelec = new Set();
-  currentStep = 0;
-  ocorrenciaAtiva = false;
+  partesReclamada  = [];
+  agentesSelec     = new Set();
+  currentStep      = 0;
+  ocorrenciaAtiva  = false;
 
   // Preenche header
   document.getElementById('proc-header').innerHTML = `
@@ -1064,17 +1065,57 @@ function abrirDiligencia(id) {
     <div style="margin-top:8px; font-size:12px; color:var(--text3);">📍 ${processoAtual.endereco||'—'}</div>
   `;
 
-  // Preenche dados funcionais com dados da planilha
-  document.getElementById('admissao-reclamante').value = processoAtual.admissao || '';
-  document.getElementById('demissao-reclamante').value = processoAtual.demissao || '';
+  // Tenta carregar diligência já salva
+  const dils = await dbGetAll('diligencias');
+  const dilSalva = dils.find(d => d.processo_id === processoAtual.id);
+
+  if (dilSalva) {
+    // ── Carrega dados salvos ──────────────────────────────────
+    partesReclamante = dilSalva.partes_reclamante || [];
+    partesReclamada  = dilSalva.partes_reclamada  || [];
+
+    // Agentes
+    for (const ag of (dilSalva.agentes || [])) {
+      agentesSelec.add(ag.id || ag);
+    }
+
+    // Ocorrências
+    ocorrenciaAtiva = !!dilSalva.ocorrencia;
+    if (ocorrenciaAtiva) {
+      document.getElementById('ocorrencia-switch').className = 'toggle-switch on';
+      document.getElementById('ocorrencia-field').style.display = 'block';
+      document.getElementById('ocorrencia-none').style.display  = 'none';
+      document.getElementById('txt-ocorrencia').value = dilSalva.ocorrencia_texto || '';
+    }
+
+    // Dados funcionais
+    document.getElementById('func-reclamante').value      = dilSalva.func_reclamante      || processoAtual.funcao || '';
+    document.getElementById('admissao-reclamante').value  = dilSalva.admissao_reclamante  || processoAtual.admissao || '';
+    document.getElementById('demissao-reclamante').value  = dilSalva.demissao_reclamante  || processoAtual.demissao || '';
+    document.getElementById('func-reclamada').value       = dilSalva.func_reclamada       || '';
+    document.getElementById('admissao-reclamada').value   = dilSalva.admissao_reclamada   || '';
+    document.getElementById('demissao-reclamada').value   = dilSalva.demissao_reclamada   || '';
+
+    // Atividades e EPIs
+    document.getElementById('ativ-autor').value       = dilSalva.ativ_autor    || '';
+    document.getElementById('ativ-empresa').value     = dilSalva.ativ_empresa  || '';
+    document.getElementById('epis-declarados').value  = dilSalva.epis          || '';
+    document.getElementById('treinamentos').value     = dilSalva.treinamentos  || '';
+
+  } else {
+    // ── Dados iniciais da planilha (nova diligência) ──────────
+    document.getElementById('admissao-reclamante').value = processoAtual.admissao || '';
+    document.getElementById('demissao-reclamante').value = processoAtual.demissao || '';
+    document.getElementById('func-reclamante').value     = processoAtual.funcao   || '';
+    // Parte vazia inicial
+    partesReclamante = [{ nome: processoAtual.reclamante || '', mister: 'Reclamante', documento: '', admissao: '' }];
+  }
+
   document.getElementById('autuacao-proc').value = processoAtual.autuacao || '';
-  document.getElementById('func-reclamante').value = processoAtual.funcao || '';
   calcPrescricao();
 
-  // Adiciona um campo vazio de reclamante por padrão
-  addParte('reclamante');
-
   renderPartes();
+  renderAgentes(); // re-renderiza com seleção carregada
   updateStep();
   goTo('screen-diligencia');
 }
