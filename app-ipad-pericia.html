@@ -1594,14 +1594,33 @@ async function syncToCloud(forceTudo = false) {
   for (const dil of pending) {
     const proc = procs.find(p => p.id === dil.processo_id);
     if (proc) {
-      const { diligencia_salva, importado_em, ...procData } = proc;
-      await sbUpsert('processos', { ...procData, status: 'diligencia_realizada' }, 'id');
+      const CAMPOS_PROCESSO = [
+        'id','numero','reclamante','reclamada','vara','cidade','endereco',
+        'data_pericia','horario','admissao','demissao','autuacao','funcao',
+        'objeto','nr15','nr16','perito_nome','perito_crea','perito_email','status',
+      ];
+      const procLimpo = { status: 'diligencia_realizada' };
+      for (const campo of CAMPOS_PROCESSO) {
+        if (proc[campo] !== undefined) procLimpo[campo] = proc[campo];
+      }
+      await sbUpsert('processos', procLimpo, 'id');
     }
-    const { sincronizado, ...dilData } = dil;
-    await sbUpsert('diligencias', {
-      ...dilData,
-      sincronizado_em: new Date().toISOString(),
-    }, 'processo_id');
+
+    // Filtra apenas campos que existem na tabela diligencias
+    const CAMPOS_DILIGENCIA = [
+      'id','processo_id','partes_reclamante','partes_reclamada',
+      'func_reclamante','admissao_reclamante','demissao_reclamante',
+      'func_reclamada','admissao_reclamada','demissao_reclamada',
+      'ativ_autor','ativ_empresa','epis','treinamentos','agentes',
+      'ocorrencia','ocorrencia_texto','salvo_em','sincronizado_em',
+    ];
+    const dilLimpa = {};
+    for (const campo of CAMPOS_DILIGENCIA) {
+      if (dil[campo] !== undefined) dilLimpa[campo] = dil[campo];
+    }
+    dilLimpa.sincronizado_em = new Date().toISOString();
+
+    await sbUpsert('diligencias', dilLimpa, 'processo_id');
 
     dil.sincronizado = true;
     await dbSave('diligencias', dil);
