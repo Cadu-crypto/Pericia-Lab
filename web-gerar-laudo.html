@@ -825,7 +825,7 @@ function fecharModalServidor() {
 // ═══════════════════════════════════════════
 function carregarDadosTeste() {
   processos = [{
-    id: 'demo_001',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     numero: '0000952-91.2025.5.09.0659',
     reclamante: 'GÍLSON GERALDO PERPETUO DA SILVA',
     reclamada: 'DALBA ENGENHARIA E EMPREENDIMENTOS LTDA E OUTROS',
@@ -899,9 +899,49 @@ function toast(msg, type) {
 function navTo(t) { toast(`Módulo "${t}" — abra o arquivo correspondente.`,''); }
 
 // INIT
-renderLista();
-verificarServidor();
-setInterval(verificarServidor, 15000); // Verifica a cada 15s
+async function iniciar() {
+  // Tenta carregar processos do Supabase primeiro
+  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const token = localStorage.getItem('sb_token');
+
+  if (cfg.url && token) {
+    try {
+      // Busca processos do Supabase
+      const headers = {
+        'Content-Type': 'application/json',
+        'apikey': cfg.anon,
+        'Authorization': `Bearer ${token}`,
+      };
+      const [rProc, rDil] = await Promise.all([
+        fetch(`${cfg.url}/rest/v1/processos?select=*&order=data_pericia.asc`, { headers }),
+        fetch(`${cfg.url}/rest/v1/diligencias?select=*`, { headers }),
+      ]);
+      if (rProc.ok) {
+        const procs = await rProc.json();
+        const dils  = rDil.ok ? await rDil.json() : [];
+        const dilMap = {};
+        for (const d of dils) dilMap[d.processo_id] = d;
+        processos = procs.map(p => ({
+          ...p,
+          diligencia: dilMap[p.id] || null,
+          diligencia_salva: !!dilMap[p.id],
+        }));
+        saveProcessos(processos);
+      }
+    } catch(e) {
+      // Offline ou erro — usa localStorage
+      processos = loadProcessos();
+    }
+  } else {
+    processos = loadProcessos();
+  }
+
+  renderLista();
+  verificarServidor();
+  setInterval(verificarServidor, 15000);
+}
+
+iniciar();
 </script>
 </body>
 </html>

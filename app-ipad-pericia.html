@@ -578,11 +578,11 @@
       <div class="card-title" style="margin-bottom:14px;">Atividades exercidas pelo autor</div>
       <div class="field">
         <label>Pelo autor (reclamante)</label>
-        <textarea id="ativ-autor" rows="5" placeholder="Descreva as atividades informadas pelo reclamante durante a entrevista..."></textarea>
+        <textarea id="ativ-autor" rows="8" style="min-height:160px;" placeholder="Descreva as atividades informadas pelo reclamante durante a entrevista..."></textarea>
       </div>
       <div class="field">
         <label>Pela empresa (reclamada)</label>
-        <textarea id="ativ-empresa" rows="4" placeholder="Descreva as atividades informadas pela empresa..."></textarea>
+        <textarea id="ativ-empresa" rows="6" style="min-height:120px;" placeholder="Descreva as atividades informadas pela empresa..."></textarea>
       </div>
     </div>
 
@@ -590,7 +590,7 @@
       <div class="card-title" style="margin-bottom:14px;">EPIs e treinamentos</div>
       <div class="field">
         <label>EPIs declarados (informação verbal)</label>
-        <textarea id="epis-declarados" rows="3" placeholder="Ex.: Protetor auricular, luvas de nitrila, capacete..."></textarea>
+        <textarea id="epis-declarados" rows="4" style="min-height:90px;" placeholder="Ex.: Protetor auricular, luvas de nitrila, capacete..."></textarea>
       </div>
       <div class="field">
         <label>Treinamentos realizados</label>
@@ -1156,12 +1156,26 @@ async function abrirDiligencia(id) {
   processoAtual = pericias.find(p => p.id === id);
   if (!processoAtual) return;
 
-  // Reseta estado
+  // Reseta estado JS
   partesReclamante = [];
   partesReclamada  = [];
   agentesSelec     = new Set();
   currentStep      = 0;
   ocorrenciaAtiva  = false;
+
+  // ── Limpa TODOS os campos do DOM ─────────────────────────────
+  const campos = ['func-reclamante','admissao-reclamante','demissao-reclamante',
+                  'func-reclamada','admissao-reclamada','demissao-reclamada',
+                  'ativ-autor','ativ-empresa','epis-declarados','treinamentos',
+                  'txt-ocorrencia'];
+  for (const id of campos) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  }
+  // Reseta toggle de ocorrências
+  document.getElementById('ocorrencia-switch').className = 'toggle-switch';
+  document.getElementById('ocorrencia-field').style.display = 'none';
+  document.getElementById('ocorrencia-none').style.display  = 'block';
 
   // Preenche header
   document.getElementById('proc-header').innerHTML = `
@@ -1261,7 +1275,12 @@ function renderPartesEl(tipo, arr) {
         <div class="field" style="margin-bottom:8px;"><label>Nome</label><input type="text" value="${p.nome}" oninput="updateParte('${tipo}',${i},'nome',this.value)" placeholder="Nome completo"></div>
         <div class="field" style="margin-bottom:8px;"><label>Função / Qualidade</label><input type="text" value="${p.mister}" oninput="updateParte('${tipo}',${i},'mister',this.value)" placeholder="Ex.: Encarregado"></div>
       </div>
-      ${tipo==='reclamada' ? `<div class="field-row"><div class="field" style="margin-bottom:4px;"><label>Admissão</label><input type="month" value="${p.admissao}" oninput="updateParte('${tipo}',${i},'admissao',this.value)"></div><div class="field" style="margin-bottom:4px;"><label>Documento</label><input type="text" value="${p.documento}" oninput="updateParte('${tipo}',${i},'documento',this.value)" placeholder="RG / CPF"></div></div>` : ''}
+      <div class="field-row">
+        <div class="field" style="margin-bottom:4px;"><label>Documento (RG / CPF)</label><input type="text" value="${p.documento}" oninput="updateParte('${tipo}',${i},'documento',this.value)" placeholder="RG ou CPF"></div>
+        ${tipo==='reclamada'
+          ? `<div class="field" style="margin-bottom:4px;"><label>Admissão</label><input type="month" value="${p.admissao}" oninput="updateParte('${tipo}',${i},'admissao',this.value)"></div>`
+          : `<div class="field" style="margin-bottom:4px;"></div>`}
+      </div>
     </div>`).join('');
 }
 
