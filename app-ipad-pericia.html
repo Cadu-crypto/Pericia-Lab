@@ -1479,38 +1479,49 @@ const SB_CONFIG = JSON.parse(localStorage.getItem('sb_config') || '{}');
 const SB_TOKEN  = localStorage.getItem('sb_token') || null;
 
 async function sbUpsert(table, row, onConflict = 'id') {
-  if (!SB_CONFIG.url || !SB_CONFIG.anon) return;
-  const token = localStorage.getItem('sb_token') || SB_CONFIG.anon;
-  try {
-    await fetch(`${SB_CONFIG.url}/rest/v1/${table}?on_conflict=${onConflict}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SB_CONFIG.anon,
-        'Authorization': `Bearer ${token}`,
-        'Prefer': 'return=minimal,resolution=merge-duplicates',
-      },
-      body: JSON.stringify(row),
-    });
-  } catch(e) {
-    console.log('[Sync] Erro:', e.message);
+  // Lê config SEMPRE fresh — pode ter mudado após login
+  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const token = localStorage.getItem('sb_token') || cfg.anon || '';
+  const url   = cfg.url || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon  = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+
+  if (!url) return;
+
+  const resp = await fetch(`${url}/rest/v1/${table}?on_conflict=${onConflict}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': anon,
+      'Authorization': `Bearer ${token}`,
+      'Prefer': 'return=minimal,resolution=merge-duplicates',
+    },
+    body: JSON.stringify(row),
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => resp.statusText);
+    throw new Error(`${table}: HTTP ${resp.status} — ${txt}`);
   }
+  return resp;
 }
 
 async function syncToCloud(forceTudo = false) {
   if (!navigator.onLine) return;
-  if (!SB_CONFIG.url || !SB_CONFIG.anon) {
+  // Lê config fresh a cada sync
+  const cfg = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const url = cfg.url || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  if (!url) {
     console.log('[Sync] Supabase não configurado — salvo apenas localmente.');
-    return;
+    return 0;
   }
 
   const dils  = await dbGetAll('diligencias');
   const procs = await dbGetAll('pericias');
 
-  // forceTudo = sincroniza tudo, mesmo já marcado como sincronizado
   const pending = forceTudo ? dils : dils.filter(d => !d.sincronizado);
   if (!pending.length) return 0;
 
+  let enviados = 0;
   for (const dil of pending) {
     const proc = procs.find(p => p.id === dil.processo_id);
     if (proc) {
@@ -1525,17 +1536,18 @@ async function syncToCloud(forceTudo = false) {
 
     dil.sincronizado = true;
     await dbSave('diligencias', dil);
+    enviados++;
   }
 
   const badge = document.getElementById('sync-badge');
   const txt   = document.getElementById('sync-text');
   if (badge && txt) {
     badge.className = 'sync-badge online';
-    txt.textContent = `Sincronizado (${pending.length})`;
+    txt.textContent = `Sincronizado (${enviados})`;
     setTimeout(() => { if (navigator.onLine) txt.textContent = 'Online'; }, 3000);
   }
-  console.log(`[Sync] ${pending.length} diligência(s) sincronizada(s).`);
-  return pending.length;
+  console.log(`[Sync] ${enviados} diligência(s) sincronizada(s).`);
+  return enviados;
 }
 
 async function syncManual() {
@@ -1546,13 +1558,13 @@ async function syncManual() {
   if (btn) { btn.textContent = '⟳ Sync...'; btn.disabled = true; }
 
   try {
-    // Força sincronização de TODAS as diligências (inclusive as já marcadas)
     const total = await syncToCloud(true);
     toast(total > 0
       ? `✓ ${total} diligência${total > 1 ? 's' : ''} enviada${total > 1 ? 's' : ''} ao servidor!`
       : '✓ Tudo já estava sincronizado.');
   } catch(e) {
-    toast('Erro ao sincronizar: ' + e.message);
+    toast('Erro: ' + e.message);
+    console.error('[Sync]', e);
   }
   if (btn) { btn.textContent = '↑ Sync'; btn.disabled = false; }
 }
