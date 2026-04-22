@@ -450,7 +450,10 @@
       <div style="font-size:22px; font-weight:600;">Perícias</div>
       <div style="font-size:13px; color:var(--text2); margin-top:2px;" id="data-hoje"></div>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="showImport()">＋ Importar</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-ghost btn-sm" id="btn-sync-manual" onclick="syncManual()" title="Sincronizar com Supabase">↑ Sync</button>
+      <button class="btn btn-ghost btn-sm" onclick="showImport()">＋ Importar</button>
+    </div>
   </div>
 
   <div id="lista-pericias">
@@ -1494,34 +1497,32 @@ async function sbUpsert(table, row, onConflict = 'id') {
   }
 }
 
-async function syncToCloud() {
+async function syncToCloud(forceTudo = false) {
   if (!navigator.onLine) return;
   if (!SB_CONFIG.url || !SB_CONFIG.anon) {
     console.log('[Sync] Supabase não configurado — salvo apenas localmente.');
     return;
   }
 
-  // Sincroniza processos e diligências não sincronizados
-  const dils = await dbGetAll('diligencias');
+  const dils  = await dbGetAll('diligencias');
   const procs = await dbGetAll('pericias');
-  const pending = dils.filter(d => !d.sincronizado);
-  if (!pending.length) return;
+
+  // forceTudo = sincroniza tudo, mesmo já marcado como sincronizado
+  const pending = forceTudo ? dils : dils.filter(d => !d.sincronizado);
+  if (!pending.length) return 0;
 
   for (const dil of pending) {
-    // Upsert processo
     const proc = procs.find(p => p.id === dil.processo_id);
     if (proc) {
       const { diligencia_salva, importado_em, ...procData } = proc;
       await sbUpsert('processos', { ...procData, status: 'diligencia_realizada' }, 'id');
     }
-    // Upsert diligência
     const { sincronizado, ...dilData } = dil;
     await sbUpsert('diligencias', {
       ...dilData,
       sincronizado_em: new Date().toISOString(),
     }, 'processo_id');
 
-    // Marca como sincronizado localmente
     dil.sincronizado = true;
     await dbSave('diligencias', dil);
   }
@@ -1533,7 +1534,27 @@ async function syncToCloud() {
     txt.textContent = `Sincronizado (${pending.length})`;
     setTimeout(() => { if (navigator.onLine) txt.textContent = 'Online'; }, 3000);
   }
-  console.log(`[Sync] ${pending.length} diligência(s) sincronizada(s) com Supabase.`);
+  console.log(`[Sync] ${pending.length} diligência(s) sincronizada(s).`);
+  return pending.length;
+}
+
+async function syncManual() {
+  const btn = document.getElementById('btn-sync-manual');
+  if (!navigator.onLine) {
+    toast('Sem internet — não é possível sincronizar agora.'); return;
+  }
+  if (btn) { btn.textContent = '⟳ Sync...'; btn.disabled = true; }
+
+  try {
+    // Força sincronização de TODAS as diligências (inclusive as já marcadas)
+    const total = await syncToCloud(true);
+    toast(total > 0
+      ? `✓ ${total} diligência${total > 1 ? 's' : ''} enviada${total > 1 ? 's' : ''} ao servidor!`
+      : '✓ Tudo já estava sincronizado.');
+  } catch(e) {
+    toast('Erro ao sincronizar: ' + e.message);
+  }
+  if (btn) { btn.textContent = '↑ Sync'; btn.disabled = false; }
 }
 
 // ═══════════════════════════════════════════
