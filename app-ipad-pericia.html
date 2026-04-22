@@ -869,22 +869,68 @@ const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+
+function tokenValido() {
+  const token = localStorage.getItem('sb_token');
+  if (!token) return false;
+  try {
+    // Decodifica o payload do JWT (parte do meio, base64)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expira  = payload.exp * 1000; // converte para ms
+    // Considera inválido se expira em menos de 5 minutos
+    return Date.now() < expira - 5 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
+
+async function renovarTokenSeNecessario() {
+  if (tokenValido()) return true;
+  // Tenta renovar via refresh_token
+  const refreshToken = localStorage.getItem('sb_refresh_token');
+  if (!refreshToken) return false;
+  const url  = 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon = 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+  try {
+    const r = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': anon },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const data = await r.json();
+    if (data.access_token) {
+      localStorage.setItem('sb_token', data.access_token);
+      if (data.refresh_token) localStorage.setItem('sb_refresh_token', data.refresh_token);
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
 async function init() {
   await initDB();
   pericias = await dbGetAll('pericias');
 
-  // Verifica se já tem token salvo
   const token = localStorage.getItem('sb_token');
   const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
 
-  if (token && cfg.url) {
-    // Já logado — vai direto para a lista
+  if (!navigator.onLine) {
+    // Offline — entra direto com dados locais, sem verificar token
     goTo('screen-lista');
-  } else if (!navigator.onLine) {
-    // Offline sem login — entra offline direto
-    goTo('screen-lista');
+  } else if (token && cfg.url) {
+    // Tem token — verifica se ainda é válido
+    const valido = await renovarTokenSeNecessario();
+    if (valido) {
+      goTo('screen-lista');
+    } else {
+      // Token expirado e não conseguiu renovar — pede login
+      localStorage.removeItem('sb_token');
+      localStorage.removeItem('sb_refresh_token');
+      goTo('screen-login');
+      return;
+    }
   } else {
-    // Precisa fazer login
+    // Sem token — pede login
     goTo('screen-login');
     return;
   }
@@ -922,8 +968,9 @@ async function fazerLoginApp() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error_description || data.message || 'Erro ao entrar');
 
-    // Salva token e config
+    // Salva token, refresh_token e config
     localStorage.setItem('sb_token', data.access_token);
+    if (data.refresh_token) localStorage.setItem('sb_refresh_token', data.refresh_token);
     localStorage.setItem('sb_config', JSON.stringify({ url, anon }));
 
     // Vai para a lista
@@ -1479,24 +1526,46 @@ const SB_CONFIG = JSON.parse(localStorage.getItem('sb_config') || '{}');
 const SB_TOKEN  = localStorage.getItem('sb_token') || null;
 
 async function sbUpsert(table, row, onConflict = 'id') {
-  // Lê config SEMPRE fresh — pode ter mudado após login
   const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
-  const token = localStorage.getItem('sb_token') || cfg.anon || '';
-  const url   = cfg.url || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const url   = cfg.url  || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
   const anon  = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+  let   token = localStorage.getItem('sb_token') || anon;
 
-  if (!url) return;
+  async function enviar(tok) {
+    return fetch(`${url}/rest/v1/${table}?on_conflict=${onConflict}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': anon,
+        'Authorization': `Bearer ${tok}`,
+        'Prefer': 'return=minimal,resolution=merge-duplicates',
+      },
+      body: JSON.stringify(row),
+    });
+  }
 
-  const resp = await fetch(`${url}/rest/v1/${table}?on_conflict=${onConflict}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': anon,
-      'Authorization': `Bearer ${token}`,
-      'Prefer': 'return=minimal,resolution=merge-duplicates',
-    },
-    body: JSON.stringify(row),
-  });
+  let resp = await enviar(token);
+
+  // JWT expirado — tenta renovar com refresh_token e reenviar
+  if (resp.status === 401) {
+    const refreshToken = localStorage.getItem('sb_refresh_token');
+    if (refreshToken) {
+      try {
+        const r = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': anon },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        const data = await r.json();
+        if (data.access_token) {
+          localStorage.setItem('sb_token', data.access_token);
+          if (data.refresh_token) localStorage.setItem('sb_refresh_token', data.refresh_token);
+          token = data.access_token;
+          resp = await enviar(token); // tenta de novo com token novo
+        }
+      } catch(e) { /* refresh falhou */ }
+    }
+  }
 
   if (!resp.ok) {
     const txt = await resp.text().catch(() => resp.statusText);
