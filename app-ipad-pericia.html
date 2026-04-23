@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Perícia">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0f1117">
+<meta name="theme-color" content="#f0f2f5">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
@@ -17,22 +17,22 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #0f1117;
-    --bg2: #181c25;
-    --bg3: #1f2433;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.14);
-    --text: #e8eaf0;
-    --text2: #8b90a0;
-    --text3: #555a6a;
-    --accent: #3b82f6;
+    --bg:      #f0f2f5;
+    --bg2:     #ffffff;
+    --bg3:     #e8edf3;
+    --border:  rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text:    #1a2035;
+    --text2:   #4a5568;
+    --text3:   #8896a8;
+    --accent:  #2563eb;
     --accent2: #1d4ed8;
-    --green: #22c55e;
-    --amber: #f59e0b;
-    --red: #ef4444;
-    --teal: #14b8a6;
-    --purple: #8b5cf6;
-    --r: 10px;
+    --green:   #16a34a;
+    --amber:   #d97706;
+    --red:     #dc2626;
+    --teal:    #0d9488;
+    --purple:  #7c3aed;
+    --r:  10px;
     --r2: 6px;
     --font: 'IBM Plex Sans', sans-serif;
     --mono: 'IBM Plex Mono', monospace;
@@ -65,7 +65,7 @@
   /* ── TOP BAR ── */
   .topbar {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(15,17,23,0.92);
+    background: rgba(240,242,245,0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
@@ -331,7 +331,7 @@
   /* ── NAV BOTTOM ── */
   .bottom-nav {
     position: sticky; bottom: 0;
-    background: rgba(15,17,23,0.98);
+    background: rgba(240,242,245,0.98);
     border-top: 1px solid var(--border);
     display: flex; padding: 10px 20px 12px;
     gap: 10px; max-width: 900px; margin: 0 auto;
@@ -381,7 +381,7 @@
 
   .loading-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(15,17,23,0.85); z-index: 9998;
+    background: rgba(240,242,245,0.92); z-index: 9998;
     align-items: center; justify-content: center; flex-direction: column; gap: 14px;
   }
   .loading-overlay.show { display: flex; }
@@ -1603,6 +1603,10 @@ async function syncToCloud(forceTudo = false) {
       for (const campo of CAMPOS_PROCESSO) {
         if (proc[campo] !== undefined) procLimpo[campo] = proc[campo];
       }
+      // Converte strings vazias para null nos campos de data
+      for (const campo of ['data_pericia','admissao','demissao','autuacao']) {
+        if (procLimpo[campo] === '' || procLimpo[campo] === '-') procLimpo[campo] = null;
+      }
       await sbUpsert('processos', procLimpo, 'id');
     }
 
@@ -1617,6 +1621,10 @@ async function syncToCloud(forceTudo = false) {
     const dilLimpa = {};
     for (const campo of CAMPOS_DILIGENCIA) {
       if (dil[campo] !== undefined) dilLimpa[campo] = dil[campo];
+    }
+    // Converte strings vazias para null nos campos de data
+    for (const campo of ['admissao_reclamante','demissao_reclamante','admissao_reclamada','demissao_reclamada']) {
+      if (dilLimpa[campo] === '') dilLimpa[campo] = null;
     }
     dilLimpa.sincronizado_em = new Date().toISOString();
 
