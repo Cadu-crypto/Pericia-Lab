@@ -398,9 +398,15 @@
 <!-- TOP BAR — fixo, fora do scroll -->
 <div class="topbar">
   <span class="topbar-title">⚖ Perícia</span>
-  <div class="sync-badge offline" id="sync-badge">
-    <div class="sync-dot"></div>
-    <span id="sync-text">Offline</span>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="sync-badge offline" id="sync-badge" onclick="syncManual()" style="cursor:pointer;" title="Clique para sincronizar">
+      <div class="sync-dot"></div>
+      <span id="sync-text">Offline</span>
+    </div>
+    <button id="btn-topbar-login" onclick="mostrarLoginModal()"
+      style="font-size:11px;padding:3px 10px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:none;">
+      Login
+    </button>
   </div>
 </div>
 
@@ -877,10 +883,39 @@ let ocorrenciaAtiva = false;
 const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','Agentes ambientais','Revisar e salvar'];
 
 // ═══════════════════════════════════════════
-// INIT
+// VERIFICAÇÃO REAL DE CONEXÃO
+// navigator.onLine é não confiável no iOS PWA
+// Fazemos um fetch real no Supabase para confirmar
 // ═══════════════════════════════════════════
+let _onlineCache = null;
+let _onlineTs    = 0;
 
-function tokenValido() {
+async function estaOnline() {
+  // Cache de 10s para não fazer fetch em todo clique
+  if (Date.now() - _onlineTs < 10000 && _onlineCache !== null) return _onlineCache;
+  try {
+    const cfg  = JSON.parse(localStorage.getItem('sb_config') || '{}');
+    const url  = (cfg.url || 'https://vzxcmxxqbqcjyherbztz.supabase.co') + '/rest/v1/';
+    const anon = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { 'apikey': anon },
+      signal: AbortSignal.timeout(4000),
+    });
+    _onlineCache = r.status < 500;
+  } catch {
+    _onlineCache = false;
+  }
+  _onlineTs = Date.now();
+  return _onlineCache;
+}
+
+function invalidarCacheOnline() {
+  _onlineCache = null;
+  _onlineTs = 0;
+}
+
+
   const token = localStorage.getItem('sb_token');
   if (!token) return false;
   try {
@@ -921,33 +956,12 @@ async function init() {
   await initDB();
   pericias = await dbGetAll('pericias');
 
-  const token = localStorage.getItem('sb_token');
-  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
-
-  if (!navigator.onLine) {
-    // Offline — entra direto com dados locais, sem verificar token
-    goTo('screen-lista');
-  } else if (token && cfg.url) {
-    // Tem token — verifica se ainda é válido
-    const valido = await renovarTokenSeNecessario();
-    if (valido) {
-      goTo('screen-lista');
-    } else {
-      // Token expirado e não conseguiu renovar — pede login
-      localStorage.removeItem('sb_token');
-      localStorage.removeItem('sb_refresh_token');
-      goTo('screen-login');
-      return;
-    }
-  } else {
-    // Sem token — pede login
-    goTo('screen-login');
-    return;
-  }
-
+  // Sempre abre a lista imediatamente com dados locais
+  goTo('screen-lista');
   renderLista();
-  watchOnline();
   renderAgentes();
+  watchOnline();
+}
 }
 
 async function fazerLoginApp() {
@@ -983,7 +997,7 @@ async function fazerLoginApp() {
     if (data.refresh_token) localStorage.setItem('sb_refresh_token', data.refresh_token);
     localStorage.setItem('sb_config', JSON.stringify({ url, anon }));
 
-    // Vai para a lista
+    // Vai para a lista (já estava lá, só atualiza o estado)
     goTo('screen-lista');
     renderLista();
     watchOnline();
@@ -1005,38 +1019,54 @@ function entrarOffline() {
 }
 
 function watchOnline() {
+  const badge    = () => document.getElementById('sync-badge');
+  const txtEl    = () => document.getElementById('sync-text');
+  const btnLogin = () => document.getElementById('btn-topbar-login');
+
   async function update() {
-    const on = navigator.onLine;
-    const b = document.getElementById('sync-badge');
-    const t = document.getElementById('sync-text');
+    invalidarCacheOnline();
+    const on = await estaOnline();
 
     if (!on) {
-      b.className = 'sync-badge offline';
-      t.textContent = 'Offline';
+      // SEM INTERNET — funciona normalmente com dados locais
+      // Não pede login, não bloqueia nada
+      badge().className = 'sync-badge offline';
+      txtEl().textContent = 'Offline';
+      if (btnLogin()) btnLogin().style.display = 'none';
       return;
     }
 
-    // Voltou a ter internet — renova o token ANTES de tentar sync
-    b.className = 'sync-badge online';
-    t.textContent = 'Reconectando...';
+    // TEM INTERNET — tenta renovar token para habilitar sync
+    badge().className = 'sync-badge online';
+    txtEl().textContent = 'Conectando...';
 
     const tokenOk = await renovarTokenSeNecessario();
-    if (!tokenOk) {
-      // Token expirado e não conseguiu renovar — pede login
-      t.textContent = 'Login necessário';
-      b.className = 'sync-badge offline';
-      // Mostra aviso sutil sem forçar logout
-      toast('Sessão expirada. Faça login novamente para sincronizar.');
-      return;
+    if (tokenOk) {
+      // Online com token válido — sync automático
+      txtEl().textContent = 'Online';
+      if (btnLogin()) btnLogin().style.display = 'none';
+      syncToCloud();
+    } else {
+      // Online mas token expirado — mostra aviso e botão de login
+      // App continua funcionando normalmente, só sync que não roda
+      txtEl().textContent = 'Login p/ sync';
+      badge().className = 'sync-badge offline';
+      if (btnLogin()) btnLogin().style.display = 'block';
     }
-
-    t.textContent = 'Online';
-    syncToCloud();
   }
 
-  window.addEventListener('online',  update);
-  window.addEventListener('offline', update);
+  // Eventos nativos de rede
+  window.addEventListener('online',  () => { invalidarCacheOnline(); update(); });
+  window.addEventListener('offline', () => { invalidarCacheOnline(); update(); });
+
+  // Verifica a cada 30s
+  setInterval(update, 30000);
+
   update();
+}
+
+function mostrarLoginModal() {
+  goTo('screen-login');
 }
 
 // ═══════════════════════════════════════════
@@ -1613,7 +1643,7 @@ async function salvarDiligencia() {
   toast('✓ Diligência salva com sucesso!');
   setTimeout(() => { renderLista(); goTo('screen-lista'); }, 1200);
 
-  if (navigator.onLine) syncToCloud();
+  estaOnline().then(on => { if (on) syncToCloud(); });
 }
 
 // ═══════════════════════════════════════════
@@ -1675,7 +1705,7 @@ async function sbUpsert(table, row, onConflict = 'id') {
 }
 
 async function syncToCloud(forceTudo = false) {
-  if (!navigator.onLine) return;
+  // verificação real feita pelo chamador
   // Lê config fresh a cada sync
   const cfg = JSON.parse(localStorage.getItem('sb_config') || '{}');
   const url = cfg.url || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
@@ -1740,7 +1770,7 @@ async function syncToCloud(forceTudo = false) {
   if (badge && txt) {
     badge.className = 'sync-badge online';
     txt.textContent = `Sincronizado (${enviados})`;
-    setTimeout(() => { if (navigator.onLine) txt.textContent = 'Online'; }, 3000);
+    setTimeout(() => { estaOnline().then(on => { if (on && txt) txt.textContent = 'Online'; }); }, 3000);
   }
   console.log(`[Sync] ${enviados} diligência(s) sincronizada(s).`);
   return enviados;
@@ -1748,7 +1778,8 @@ async function syncToCloud(forceTudo = false) {
 
 async function syncManual() {
   const btn = document.getElementById('btn-sync-manual');
-  if (!navigator.onLine) {
+  const on = await estaOnline();
+  if (!on) {
     toast('Sem internet — não é possível sincronizar agora.'); return;
   }
   if (btn) { btn.textContent = '⟳ Sync...'; btn.disabled = true; }
