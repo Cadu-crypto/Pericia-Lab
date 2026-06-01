@@ -173,8 +173,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   <div class="painel-lista">
     <div class="painel-header">
       <span class="painel-title">Processos</span>
-      <button class="btn btn-ghost btn-sm" onclick="carregarDadosTeste()">Demo</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn btn-ghost btn-sm" onclick="recarregarProcessos()" title="Recarregar do Supabase" style="font-size:14px;padding:3px 8px;">↻</button>
+        <button class="btn btn-ghost btn-sm" onclick="carregarDadosTeste()">Demo</button>
+      </div>
     </div>
+    <div id="status-supabase" style="display:none;padding:6px 12px;font-size:11px;border-bottom:1px solid var(--border);"></div>
     <div class="lista-scroll" id="lista-processos">
       <div class="empty-area" style="padding:40px 0;">
         <div class="empty-icon">📋</div>
@@ -339,7 +343,14 @@ function renderLista() {
     const temDil = p.diligencia ? 'tag-ok' : 'tag-pend';
     const dilTxt = p.diligencia ? '✓ Diligência' : '⏳ Sem diligência';
     return `<div class="proc-item ${processoAtual?.id===p.id?'active':''}" onclick="selecionarProcesso('${p.id}')">
-      <div class="proc-num">${p.numero||'—'}</div>
+      <div class="proc-num" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>${p.numero||'—'}</span>
+        <button onclick="event.stopPropagation();excluirProcesso('${p.id}','${(p.reclamante||'').replace(/'/g,"\\'")}')"
+          title="Excluir processo"
+          style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;"
+          onmouseover="this.style.opacity='1';this.style.color='var(--red)'"
+          onmouseout="this.style.opacity='0.5';this.style.color='var(--text3)'">✕</button>
+      </div>
       <div class="proc-nome">${p.reclamante||'—'}</div>
       <div class="proc-empresa">${p.reclamada||'—'}</div>
       <div class="proc-meta">
@@ -351,8 +362,44 @@ function renderLista() {
 }
 
 // ═══════════════════════════════════════════
-// SELECIONAR PROCESSO
+// EXCLUIR PROCESSO
 // ═══════════════════════════════════════════
+async function excluirProcesso(id, nome) {
+  if (!confirm(`Excluir o processo de ${nome}?\n\nEsta ação remove do Supabase e da lista local.`)) return;
+
+  // Remove localmente
+  processos = processos.filter(p => p.id !== id);
+  saveProcessos(processos);
+  if (processoAtual?.id === id) {
+    processoAtual = null;
+    document.getElementById('empty-principal').style.display = 'flex';
+    document.getElementById('painel-processo').style.display = 'none';
+  }
+  renderLista();
+
+  // Remove do Supabase
+  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const token = localStorage.getItem('sb_token') || cfg.anon || '';
+  if (!cfg.url) return;
+
+  try {
+    // Remove diligência vinculada primeiro (FK constraint)
+    await fetch(`${cfg.url}/rest/v1/diligencias?processo_id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type':'application/json', 'apikey': cfg.anon, 'Authorization': `Bearer ${token}` },
+    });
+    // Remove processo
+    await fetch(`${cfg.url}/rest/v1/processos?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type':'application/json', 'apikey': cfg.anon, 'Authorization': `Bearer ${token}` },
+    });
+    toast('✓ Processo excluído.');
+  } catch(e) {
+    toast('Excluído localmente. Erro no servidor: ' + e.message);
+  }
+}
+
+
 function selecionarProcesso(id) {
   processoAtual = processos.find(p => p.id === id);
   if (!processoAtual) return;
@@ -899,23 +946,81 @@ function toast(msg, type) {
 function navTo(t) { toast(`Módulo "${t}" — abra o arquivo correspondente.`,''); }
 
 // INIT
-async function iniciar() {
-  // Tenta carregar processos do Supabase primeiro
-  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
-  const token = localStorage.getItem('sb_token');
+function setStatusSupabase(msg, tipo) {
+  const el = document.getElementById('status-supabase');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.style.color      = tipo === 'ok' ? 'var(--green)' : tipo === 'err' ? 'var(--red)' : 'var(--amber)';
+  el.style.background = tipo === 'ok' ? 'rgba(34,197,94,.06)' : tipo === 'err' ? 'rgba(239,68,68,.06)' : 'rgba(245,158,11,.06)';
+  el.textContent = msg;
+}
 
-  if (cfg.url && token) {
+async function recarregarProcessos() {
+  setStatusSupabase('Carregando...', 'warn');
+  await iniciar();
+}
+
+async function renovarTokenPC() {
+  // Tenta renovar o token via refresh_token
+  const cfg = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const url  = cfg.url  || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+
+  // Verifica se o token atual ainda é válido
+  const token = localStorage.getItem('sb_token');
+  if (token) {
     try {
-      // Busca processos do Supabase
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (Date.now() < payload.exp * 1000 - 60000) return token; // ainda válido
+    } catch {}
+  }
+
+  // Tenta renovar via refresh_token
+  const refresh = localStorage.getItem('sb_refresh_token');
+  if (refresh) {
+    try {
+      const r = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': anon },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      const data = await r.json();
+      if (data.access_token) {
+        localStorage.setItem('sb_token', data.access_token);
+        if (data.refresh_token) localStorage.setItem('sb_refresh_token', data.refresh_token);
+        return data.access_token;
+      }
+    } catch {}
+  }
+
+  return token || null;
+}
+
+async function iniciar() {
+  // Mostra status de carregamento
+  const listaEl = document.getElementById('lista-processos');
+  if (listaEl) listaEl.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Carregando processos...</div>`;
+
+  const cfg = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const url  = cfg.url  || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+
+  // Tenta renovar token antes de buscar
+  const token = await renovarTokenPC();
+
+  if (token) {
+    try {
       const headers = {
         'Content-Type': 'application/json',
-        'apikey': cfg.anon,
+        'apikey': anon,
         'Authorization': `Bearer ${token}`,
       };
       const [rProc, rDil] = await Promise.all([
-        fetch(`${cfg.url}/rest/v1/processos?select=*&order=data_pericia.asc`, { headers }),
-        fetch(`${cfg.url}/rest/v1/diligencias?select=*`, { headers }),
+        fetch(`${url}/rest/v1/processos?select=*&order=data_pericia.desc`, { headers }),
+        fetch(`${url}/rest/v1/diligencias?select=*`, { headers }),
       ]);
+
       if (rProc.ok) {
         const procs = await rProc.json();
         const dils  = rDil.ok ? await rDil.json() : [];
@@ -927,13 +1032,31 @@ async function iniciar() {
           diligencia_salva: !!dilMap[p.id],
         }));
         saveProcessos(processos);
+        setStatusSupabase(`✓ ${processos.length} processos · ${dils.length} diligências`, 'ok');
+        setTimeout(() => setStatusSupabase('', ''), 4000);
+        console.log(`[Supabase] ${processos.length} processos carregados, ${dils.length} diligências`);
+      } else {
+        const err = await rProc.json().catch(() => ({}));
+        console.error('[Supabase] Erro:', rProc.status, err);
+        if (rProc.status === 401) {
+          localStorage.removeItem('sb_token');
+          localStorage.removeItem('sb_refresh_token');
+          setStatusSupabase('⚠ Sessão expirada — acesse configuracao.html para fazer login', 'err');
+        } else {
+          setStatusSupabase(`⚠ Erro Supabase: ${rProc.status}`, 'err');
+        }
+        processos = loadProcessos();
       }
     } catch(e) {
-      // Offline ou erro — usa localStorage
+      console.error('[Supabase] Falha de rede:', e.message);
+      setStatusSupabase('⚠ Sem conexão — usando dados locais', 'warn');
       processos = loadProcessos();
     }
   } else {
+    // Sem token — usa local e mostra aviso
     processos = loadProcessos();
+    setStatusSupabase('⚠ Sem login — acesse configuracao.html', 'warn');
+    console.warn('[Supabase] Sem token — usando dados locais. Faça login no configuracao.html');
   }
 
   renderLista();
