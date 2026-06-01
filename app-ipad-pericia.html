@@ -885,27 +885,36 @@ const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','
 // ═══════════════════════════════════════════
 // VERIFICAÇÃO REAL DE CONEXÃO
 // navigator.onLine é não confiável no iOS PWA
-// Fazemos um fetch real no Supabase para confirmar
+// Verificação real de conexão — tenta múltiplos endpoints
 // ═══════════════════════════════════════════
 let _onlineCache = null;
 let _onlineTs    = 0;
 
 async function estaOnline() {
-  // Cache de 10s para não fazer fetch em todo clique
-  if (Date.now() - _onlineTs < 10000 && _onlineCache !== null) return _onlineCache;
+  // Cache de 15s
+  if (Date.now() - _onlineTs < 15000 && _onlineCache !== null) return _onlineCache;
+
+  // Primeiro: navigator.onLine como hint rápido
+  if (!navigator.onLine) {
+    _onlineCache = false;
+    _onlineTs = Date.now();
+    return false;
+  }
+
+  // Segundo: tenta o Supabase com mode:'no-cors'
+  // no-cors não lança erro de CORS, lança só se sem rede
   try {
-    const cfg  = JSON.parse(localStorage.getItem('sb_config') || '{}');
-    const url  = (cfg.url || 'https://vzxcmxxqbqcjyherbztz.supabase.co') + '/rest/v1/';
-    const anon = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
-    const r = await fetch(url, {
-      method: 'GET',
-      headers: { 'apikey': anon },
-      signal: AbortSignal.timeout(4000),
+    await fetch('https://vzxcmxxqbqcjyherbztz.supabase.co', {
+      method: 'HEAD',
+      mode: 'no-cors',
+      signal: AbortSignal.timeout(5000),
     });
-    _onlineCache = r.status < 500;
+    // Se chegou aqui sem exceção = tem rede
+    _onlineCache = true;
   } catch {
     _onlineCache = false;
   }
+
   _onlineTs = Date.now();
   return _onlineCache;
 }
