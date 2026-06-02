@@ -457,7 +457,8 @@
       <div style="font-size:13px; color:var(--text2); margin-top:2px;" id="data-hoje"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-ghost btn-sm" id="btn-sync-manual" onclick="syncManual()" title="Sincronizar com Supabase">↑ Sync</button>
+      <button class="btn btn-ghost btn-sm" id="btn-sync-manual" onclick="syncManual()" title="Enviar dados ao servidor">↑ Sync</button>
+      <button class="btn btn-ghost btn-sm" onclick="baixarPericiasSuabase()" title="Baixar perícias do servidor">↓ Baixar</button>
       <button class="btn btn-ghost btn-sm" onclick="showImport()">＋ Importar</button>
     </div>
   </div>
@@ -885,7 +886,7 @@ const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','
 // ═══════════════════════════════════════════
 // VERIFICAÇÃO REAL DE CONEXÃO
 // navigator.onLine é não confiável no iOS PWA
-// Verificação real de conexão — tenta múltiplos endpoints
+// Verificação de conexão — compatível com Safari iOS PWA
 // ═══════════════════════════════════════════
 let _onlineCache = null;
 let _onlineTs    = 0;
@@ -894,23 +895,25 @@ async function estaOnline() {
   // Cache de 15s
   if (Date.now() - _onlineTs < 15000 && _onlineCache !== null) return _onlineCache;
 
-  // Primeiro: navigator.onLine como hint rápido
+  // Safari iOS: navigator.onLine é razoavelmente confiável quando false
   if (!navigator.onLine) {
     _onlineCache = false;
     _onlineTs = Date.now();
     return false;
   }
 
-  // Segundo: tenta o Supabase com mode:'no-cors'
-  // no-cors não lança erro de CORS, lança só se sem rede
+  // Tenta auth do Supabase — endpoint que aceita CORS sem token
   try {
-    await fetch('https://vzxcmxxqbqcjyherbztz.supabase.co', {
-      method: 'HEAD',
-      mode: 'no-cors',
-      signal: AbortSignal.timeout(5000),
-    });
-    // Se chegou aqui sem exceção = tem rede
-    _onlineCache = true;
+    const anon = 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+    const r = await fetch(
+      'https://vzxcmxxqbqcjyherbztz.supabase.co/auth/v1/settings',
+      {
+        method: 'GET',
+        headers: { 'apikey': anon },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+    _onlineCache = r.status < 500;
   } catch {
     _onlineCache = false;
   }
@@ -965,11 +968,73 @@ async function init() {
   await initDB();
   pericias = await dbGetAll('pericias');
 
-  // Sempre abre a lista imediatamente com dados locais
+  // Sempre abre a lista com dados locais primeiro
   goTo('screen-lista');
   renderLista();
   renderAgentes();
   watchOnline();
+
+  // Se IndexedDB vazio E tem rede → baixa do Supabase automaticamente
+  if (pericias.length === 0) {
+    const on = await estaOnline();
+    if (on) {
+      await baixarPericiasSuabase();
+    }
+  }
+}
+
+async function baixarPericiasSuabase() {
+  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const url   = cfg.url  || 'https://vzxcmxxqbqcjyherbztz.supabase.co';
+  const anon  = cfg.anon || 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+  const token = await renovarTokenSeNecessario().then(() => localStorage.getItem('sb_token')).catch(() => null);
+  if (!token) return;
+
+  try {
+    const b = document.getElementById('sync-badge');
+    const t = document.getElementById('sync-text');
+    if (b) b.className = 'sync-badge online';
+    if (t) t.textContent = 'Baixando perícias...';
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': anon,
+      'Authorization': `Bearer ${token}`,
+    };
+
+    const [rProc, rDil] = await Promise.all([
+      fetch(`${url}/rest/v1/processos?select=*&order=data_pericia.desc`, { headers }),
+      fetch(`${url}/rest/v1/diligencias?select=*`, { headers }),
+    ]);
+
+    if (!rProc.ok) return;
+
+    const procs = await rProc.json();
+    const dils  = rDil.ok ? await rDil.json() : [];
+    const dilMap = {};
+    for (const d of dils) dilMap[d.processo_id] = d;
+
+    // Salva cada processo no IndexedDB local
+    for (const p of procs) {
+      const proc = {
+        ...p,
+        diligencia_salva: !!dilMap[p.id],
+      };
+      await dbSave('pericias', proc);
+      // Salva diligência vinculada também
+      if (dilMap[p.id]) {
+        await dbSave('diligencias', { ...dilMap[p.id], sincronizado: true });
+      }
+    }
+
+    pericias = await dbGetAll('pericias');
+    renderLista();
+
+    if (t) t.textContent = 'Online';
+    toast(`✓ ${procs.length} perícias carregadas do servidor`);
+  } catch(e) {
+    console.error('[Sync] Erro ao baixar:', e.message);
+  }
 }
 }
 
