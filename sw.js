@@ -1,5 +1,5 @@
 // PeríciaLab — Service Worker
-const CACHE_VERSION = 'pericia-v2';
+const CACHE_VERSION = 'pericia-v3';
 
 const ARQUIVOS_CACHE = [
   '/Pericia-Lab/app-ipad-pericia.html',
