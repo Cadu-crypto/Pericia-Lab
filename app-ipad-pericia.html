@@ -568,6 +568,17 @@
     <div class="card">
       <div class="card-title" style="margin-bottom:14px;">Dados funcionais do reclamante</div>
 
+      <!-- Objeto da Perícia -->
+      <div class="field" style="margin-bottom:16px;">
+        <label>Objeto da Perícia</label>
+        <select id="objeto-pericia" style="width:100%;padding:10px 12px;border-radius:var(--r2);border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:14px;font-family:var(--font);">
+          <option value="insalubridade">Insalubridade (NR-15)</option>
+          <option value="periculosidade">Periculosidade (NR-16)</option>
+          <option value="insalubridade_periculosidade">Insalubridade + Periculosidade</option>
+          <option value="ergonomia">Ergonomia (NR-17)</option>
+        </select>
+      </div>
+
       <div class="divider"><div class="divider-line"></div><div class="divider-text">Pela Reclamante</div><div class="divider-line"></div></div>
       <div class="field-row">
         <div class="field"><label>Função declarada</label><input type="text" id="func-reclamante" placeholder="Ex.: Auxiliar de produção"></div>
@@ -1427,17 +1438,38 @@ async function abrirDiligencia(id) {
   document.getElementById('ocorrencia-field').style.display = 'none';
   document.getElementById('ocorrencia-none').style.display  = 'block';
 
-  // Preenche header
+  // Preenche header com período laboral e objeto
+  const admR   = processoAtual.admissao || processoAtual.admissao_reclamante || '';
+  const demR   = processoAtual.demissao || processoAtual.demissao_reclamante || '';
+  const fmtAdm = admR ? new Date(admR+'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const fmtDem = demR ? new Date(demR+'T12:00:00').toLocaleDateString('pt-BR') : 'atual';
+  const obj    = processoAtual.objeto || 'insalubridade';
+  const objLabel = {
+    'insalubridade': '🔵 Insalubridade',
+    'periculosidade': '🔴 Periculosidade',
+    'insalubridade_periculosidade': '🟣 Insalub. + Periculosidade',
+    'ergonomia': '🟢 Ergonomia',
+    'ambos': '🟣 Insalub. + Periculosidade',
+  }[obj] || obj;
+
   document.getElementById('proc-header').innerHTML = `
     <div class="processo-header-num">${processoAtual.numero}</div>
     <div class="processo-header-nome">${processoAtual.reclamante}</div>
     <div class="processo-header-meta">${processoAtual.reclamada}</div>
-    <div class="meta-row">
+    <div class="meta-row" style="margin-top:8px;">
       <div class="meta-item"><span class="meta-label">Data: </span><span class="meta-val">${processoAtual.data_pericia||'—'}</span></div>
       <div class="meta-item"><span class="meta-label">Hora: </span><span class="meta-val">${processoAtual.horario||'—'}</span></div>
       <div class="meta-item"><span class="meta-label">Vara: </span><span class="meta-val">${processoAtual.vara||'—'}</span></div>
     </div>
-    <div style="margin-top:8px; font-size:12px; color:var(--text3);">📍 ${processoAtual.endereco||'—'}</div>
+    <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;">
+      <div style="font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:4px 10px;">
+        📅 <strong>Período:</strong> ${fmtAdm} → ${fmtDem}
+      </div>
+      <div style="font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:4px 10px;">
+        ⚖ <strong>Objeto:</strong> ${objLabel}
+      </div>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:var(--text3);">📍 ${processoAtual.endereco||'—'}</div>
   `;
 
   // Tenta carregar diligência já salva
@@ -1487,6 +1519,11 @@ async function abrirDiligencia(id) {
   }
 
   document.getElementById('autuacao-proc').value = processoAtual.autuacao || '';
+
+  // Popula objeto da perícia
+  const objSelect = document.getElementById('objeto-pericia');
+  if (objSelect) objSelect.value = processoAtual.objeto || 'insalubridade';
+
   calcPrescricao();
 
   renderPartes();
@@ -1676,6 +1713,11 @@ function buildResumo() {
 // ═══════════════════════════════════════════
 async function salvarDiligencia() {
   showLoading();
+
+  // Atualiza objeto da perícia no processo (pode ter sido alterado)
+  const objSelect = document.getElementById('objeto-pericia');
+  if (objSelect) processoAtual.objeto = objSelect.value;
+
   const diligencia = {
     id: gerarUUID(),
     processo_id: processoAtual.id,
@@ -1704,7 +1746,7 @@ async function salvarDiligencia() {
 
   await dbSave('diligencias', diligencia);
 
-  // Atualiza status da perícia
+  // Atualiza status da perícia (com objeto atualizado)
   processoAtual.diligencia_salva = true;
   await dbSave('pericias', processoAtual);
   pericias = await dbGetAll('pericias');
@@ -1908,6 +1950,7 @@ function detectarObjeto(nr15, nr16) {
   if (t15 && t16 && t15 !== '-' && t16 !== '-') return 'insalubridade_periculosidade';
   if (t16 && t16 !== '-') return 'periculosidade';
   return 'insalubridade';
+  // Nota: 'ergonomia' é definido manualmente na diligência
 }
 
 function toast(msg) {

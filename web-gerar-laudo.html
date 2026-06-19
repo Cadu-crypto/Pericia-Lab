@@ -39,20 +39,35 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .lista-scroll::-webkit-scrollbar{width:4px;}
 .lista-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 
+/* BUSCA */
+.busca-wrap{padding:8px 10px;border-bottom:1px solid var(--border);}
+.busca-input{width:100%;padding:7px 10px;border-radius:var(--r2);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;font-family:var(--font);box-sizing:border-box;}
+.busca-input:focus{outline:none;border-color:var(--accent);}
+
+/* ABAS DE STATUS */
+.status-tabs{display:flex;padding:6px 8px;gap:4px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.status-tab{flex:1;padding:5px 4px;border-radius:6px;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--font);background:transparent;color:var(--text3);transition:all .12s;}
+.status-tab.active{background:var(--accent);color:#fff;}
+.status-tab .tab-count{font-size:10px;opacity:.8;margin-left:3px;}
+
 /* PROCESSO ITEM */
-.proc-item{padding:12px 14px;border-radius:var(--r2);cursor:pointer;transition:all .12s;margin-bottom:4px;border:1px solid transparent;}
+.proc-item{padding:12px 14px;border-radius:var(--r2);cursor:pointer;transition:all .12s;margin-bottom:4px;border:1px solid transparent;position:relative;}
 .proc-item:hover{background:var(--bg3);}
 .proc-item.active{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);}
-.proc-num{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px;}
+.proc-item.finalizado{opacity:.65;}
+.proc-item.finalizado .proc-nome{text-decoration:line-through;text-decoration-color:var(--text3);}
+.proc-num{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;}
 .proc-nome{font-size:13px;font-weight:600;margin-bottom:2px;}
 .proc-empresa{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.proc-meta{display:flex;gap:8px;margin-top:6px;}
+.proc-meta{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
 .proc-tag{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500;}
-.tag-ins{background:rgba(59,130,246,.12);color:#60a5fa;}
-.tag-peri{background:rgba(239,68,68,.12);color:#f87171;}
-.tag-ambos{background:rgba(139,92,246,.12);color:#a78bfa;}
-.tag-ok{background:rgba(34,197,94,.12);color:#4ade80;}
-.tag-pend{background:rgba(245,158,11,.12);color:#fbbf24;}
+.tag-ins{background:rgba(59,130,246,.12);color:var(--accent);}
+.tag-peri{background:rgba(239,68,68,.12);color:var(--red);}
+.tag-ambos{background:rgba(139,92,246,.12);color:#7c3aed;}
+.tag-erg{background:rgba(20,184,166,.12);color:#0d9488;}
+.tag-ok{background:rgba(34,197,94,.12);color:var(--green);}
+.tag-pend{background:rgba(245,158,11,.12);color:var(--amber);}
+.tag-final{background:rgba(100,116,139,.12);color:#64748b;}
 .status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 
 /* ÁREA PRINCIPAL */
@@ -173,18 +188,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   <div class="painel-lista">
     <div class="painel-header">
       <span class="painel-title">Processos</span>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <button class="btn btn-ghost btn-sm" onclick="recarregarProcessos()" title="Recarregar do Supabase" style="font-size:14px;padding:3px 8px;">↻</button>
-        <button class="btn btn-ghost btn-sm" onclick="carregarDadosTeste()">Demo</button>
-      </div>
+      <button class="btn btn-ghost btn-sm" onclick="recarregarProcessos()" title="Recarregar do Supabase" style="font-size:14px;padding:3px 8px;">↻</button>
     </div>
     <div id="status-supabase" style="display:none;padding:6px 12px;font-size:11px;border-bottom:1px solid var(--border);"></div>
-    <div class="lista-scroll" id="lista-processos">
-      <div class="empty-area" style="padding:40px 0;">
-        <div class="empty-icon">📋</div>
-        <div style="font-size:13px;color:var(--text3);text-align:center;">Nenhum processo.<br>Importe pelo app iPad.</div>
-      </div>
+
+    <!-- Campo de busca -->
+    <div class="busca-wrap">
+      <input class="busca-input" id="busca-processo" type="text"
+        placeholder="🔍 Nome ou número do processo..."
+        oninput="renderLista()" autocomplete="off">
     </div>
+
+    <!-- Abas de status -->
+    <div class="status-tabs">
+      <button class="status-tab active" id="tab-em_andamento" onclick="setTabStatus('em_andamento')">
+        Andamento <span class="tab-count" id="count-em_andamento"></span>
+      </button>
+      <button class="status-tab" id="tab-finalizado" onclick="setTabStatus('finalizado')">
+        Finalizados <span class="tab-count" id="count-finalizado"></span>
+      </button>
+      <button class="status-tab" id="tab-todos" onclick="setTabStatus('todos')">
+        Todos
+      </button>
+    </div>
+
+    <div class="lista-scroll" id="lista-processos"></div>
   </div>
 
   <!-- ÁREA PRINCIPAL -->
@@ -218,6 +246,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
           <span style="font-size:12px;color:var(--text2);flex:1;" id="previa-status">Prévia não gerada ainda.</span>
           <button class="btn btn-ghost btn-sm" onclick="gerarPrevia()">↺ Regerar</button>
           <button class="btn btn-green" onclick="exportarDocx()" id="btn-exportar" disabled>⬇ Exportar DOCX</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleFinalizar()" id="btn-finalizar"
+            style="border-color:rgba(100,116,139,.3);color:#64748b;margin-left:4px;" title="Marcar como finalizado">
+            ✓ Finalizar
+          </button>
         </div>
         <div class="previa-scroll">
           <div id="previa-container">
@@ -328,39 +360,153 @@ const AGENTE_ID_MAP = {
 };
 
 // ═══════════════════════════════════════════
-// LISTA DE PROCESSOS
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════
+// LISTA DE PROCESSOS — busca + abas + status
+// ══════════════════════════════════════════
+let tabStatus = 'em_andamento';
+
+function setTabStatus(tab) {
+  tabStatus = tab;
+  ['em_andamento','finalizado','todos'].forEach(t => {
+    const el = document.getElementById(`tab-${t}`);
+    if (el) el.className = 'status-tab' + (t === tab ? ' active' : '');
+  });
+  renderLista();
+}
+
+function objTag(obj) {
+  const MAP = {
+    'insalubridade':              ['tag-ins',   'Insalubridade'],
+    'periculosidade':             ['tag-peri',  'Periculosidade'],
+    'insalubridade_periculosidade':['tag-ambos','Insalub.+Peric.'],
+    'ergonomia':                  ['tag-erg',   'Ergonomia'],
+    'ambos':                      ['tag-ambos', 'Insalub.+Peric.'],
+  };
+  return MAP[obj] || ['tag-ins','Insalubridade'];
+}
+
 function renderLista() {
-  const el = document.getElementById('lista-processos');
+  const el     = document.getElementById('lista-processos');
+  const busca  = (document.getElementById('busca-processo')?.value || '').toLowerCase().trim();
+
   if (!processos.length) {
-    el.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text3);font-size:13px;">Nenhum processo.<br>Importe pelo app iPad.</div>`;
+    el.innerHTML = `<div style="padding:40px 16px;text-align:center;color:var(--text3);font-size:12px;">
+      Nenhum processo.<br>Clique ↻ para carregar do Supabase.
+    </div>`;
+    atualizarContadores([],[]);
     return;
   }
-  el.innerHTML = processos.map(p => {
-    const obj = p.objeto || 'insalubridade';
-    const tagCls = obj==='insalubridade'?'tag-ins':obj==='periculosidade'?'tag-peri':'tag-ambos';
-    const tagTxt = obj==='insalubridade'?'Insalub.':obj==='periculosidade'?'Periculosidade':'Ambos';
-    const temDil = p.diligencia ? 'tag-ok' : 'tag-pend';
-    const dilTxt = p.diligencia ? '✓ Diligência' : '⏳ Sem diligência';
-    return `<div class="proc-item ${processoAtual?.id===p.id?'active':''}" onclick="selecionarProcesso('${p.id}')">
-      <div class="proc-num" style="display:flex;justify-content:space-between;align-items:center;">
+
+  // Separa por status
+  const emAndamento = processos.filter(p => p.laudo_status !== 'finalizado');
+  const finalizados  = processos.filter(p => p.laudo_status === 'finalizado');
+  atualizarContadores(emAndamento, finalizados);
+
+  // Aplica aba
+  let lista = tabStatus === 'em_andamento' ? emAndamento
+            : tabStatus === 'finalizado'   ? finalizados
+            : processos;
+
+  // Aplica busca
+  if (busca) {
+    lista = lista.filter(p =>
+      (p.numero      || '').toLowerCase().includes(busca) ||
+      (p.reclamante  || '').toLowerCase().includes(busca) ||
+      (p.reclamada   || '').toLowerCase().includes(busca)
+    );
+  }
+
+  if (!lista.length) {
+    el.innerHTML = `<div style="padding:30px 16px;text-align:center;color:var(--text3);font-size:12px;">
+      ${busca ? 'Nenhum resultado para "' + busca + '"' : 'Nenhum processo nesta aba.'}
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = lista.map(p => {
+    const [tagCls, tagTxt] = objTag(p.objeto);
+    const temDil    = p.diligencia_salva;
+    const finalizado = p.laudo_status === 'finalizado';
+    const isAtivo   = processoAtual?.id === p.id;
+
+    return `<div class="proc-item ${isAtivo?'active':''} ${finalizado?'finalizado':''}"
+               onclick="selecionarProcesso('${p.id}')">
+      <div class="proc-num">
         <span>${p.numero||'—'}</span>
         <button onclick="event.stopPropagation();excluirProcesso('${p.id}','${(p.reclamante||'').replace(/'/g,"\\'")}')"
-          title="Excluir processo"
-          style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px 4px;border-radius:4px;line-height:1;opacity:0.5;"
+          title="Excluir" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0 2px;opacity:0.4;"
           onmouseover="this.style.opacity='1';this.style.color='var(--red)'"
-          onmouseout="this.style.opacity='0.5';this.style.color='var(--text3)'">✕</button>
+          onmouseout="this.style.opacity='0.4';this.style.color='var(--text3)'">✕</button>
       </div>
       <div class="proc-nome">${p.reclamante||'—'}</div>
       <div class="proc-empresa">${p.reclamada||'—'}</div>
       <div class="proc-meta">
         <span class="proc-tag ${tagCls}">${tagTxt}</span>
-        <span class="proc-tag ${temDil}">${dilTxt}</span>
+        ${temDil  ? '<span class="proc-tag tag-ok">✓ Diligência</span>' : '<span class="proc-tag tag-pend">⏳ Pendente</span>'}
+        ${finalizado ? '<span class="proc-tag tag-final">✓ Finalizado</span>' : ''}
       </div>
     </div>`;
   }).join('');
 }
 
+function atualizarContadores(emAndamento, finalizados) {
+  const ca = document.getElementById('count-em_andamento');
+  const cf = document.getElementById('count-finalizado');
+  if (ca) ca.textContent = emAndamento.length ? `(${emAndamento.length})` : '';
+  if (cf) cf.textContent = finalizados.length  ? `(${finalizados.length})`  : '';
+}
+
+async function toggleFinalizar() {
+  if (!processoAtual) return;
+  const jaFinalizado = processoAtual.laudo_status === 'finalizado';
+  const acao = jaFinalizado ? 'reabrir' : 'finalizar';
+
+  if (!confirm(`${jaFinalizado ? 'Reabrir' : 'Finalizar'} o laudo de ${processoAtual.reclamante}?`)) return;
+
+  processoAtual.laudo_status = jaFinalizado ? 'em_andamento' : 'finalizado';
+  processoAtual.laudo_finalizado_em = jaFinalizado ? null : new Date().toISOString();
+
+  // Salva localmente
+  const saved = loadProcessos();
+  const idx   = saved.findIndex(x => x.id === processoAtual.id);
+  if (idx >= 0) saved[idx] = processoAtual;
+  saveProcessos(saved);
+  processos = saved;
+
+  // Salva no Supabase
+  const cfg   = JSON.parse(localStorage.getItem('sb_config') || '{}');
+  const token = localStorage.getItem('sb_token');
+  if (cfg.url && token) {
+    try {
+      await fetch(`${cfg.url}/rest/v1/processos?id=eq.${processoAtual.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': cfg.anon,
+          'Authorization': `Bearer ${token}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          laudo_status: processoAtual.laudo_status,
+          laudo_finalizado_em: processoAtual.laudo_finalizado_em,
+        }),
+      });
+    } catch(e) { console.error('Erro ao salvar status:', e); }
+  }
+
+  // Atualiza botão
+  const btn = document.getElementById('btn-finalizar');
+  if (btn) {
+    btn.textContent = processoAtual.laudo_status === 'finalizado' ? '↩ Reabrir' : '✓ Finalizar';
+    btn.style.color = processoAtual.laudo_status === 'finalizado' ? 'var(--green)' : '#64748b';
+    btn.style.borderColor = processoAtual.laudo_status === 'finalizado' ? 'rgba(34,197,94,.3)' : 'rgba(100,116,139,.3)';
+  }
+
+  renderLista();
+  toast(`✓ Laudo ${jaFinalizado ? 'reaberto' : 'finalizado'}!`);
+}
+
+// ═══════════════════════════════════════════
 // ═══════════════════════════════════════════
 // EXCLUIR PROCESSO
 // ═══════════════════════════════════════════
@@ -413,6 +559,15 @@ function selecionarProcesso(id) {
   document.getElementById('btn-exportar').disabled = true;
   document.getElementById('previa-status').textContent = 'Prévia não gerada ainda.';
   document.getElementById('previa-container').innerHTML = `<div class="empty-area"><div class="empty-icon">📄</div><div class="empty-title">Prévia não gerada</div><div class="empty-sub">Clique em "Gerar prévia do laudo" para visualizar.</div></div>`;
+
+  // Atualiza botão finalizar
+  const finalizado = processoAtual.laudo_status === 'finalizado';
+  const btn = document.getElementById('btn-finalizar');
+  if (btn) {
+    btn.textContent  = finalizado ? '↩ Reabrir' : '✓ Finalizar';
+    btn.style.color  = finalizado ? 'var(--green)' : '#64748b';
+    btn.style.borderColor = finalizado ? 'rgba(34,197,94,.3)' : 'rgba(100,116,139,.3)';
+  }
 }
 
 // ═══════════════════════════════════════════
