@@ -592,11 +592,12 @@ function renderRevisao() {
 
   // Alertas de textos faltando
   const obj = p.objeto || 'insalubridade';
+  const objVarAlerta = objVariante(obj);
   const alertas = [];
-  if (!TEXTOS[`topico1_${obj}`]) alertas.push(`Texto do Tópico 1 (${obj}) não cadastrado`);
+  if (!TEXTOS[`topico1_${objVarAlerta}`]) alertas.push(`Texto do Tópico 1 (${obj}) não cadastrado`);
   if (!TEXTOS['topico2'])        alertas.push('Texto do Tópico 2 não cadastrado');
-  if (!TEXTOS[`topico3_ins`] && (obj==='insalubridade'||obj==='ambos')) alertas.push('Texto Tópico 3 — Insalubridade não cadastrado');
-  if (!TEXTOS[`topico3_peri`] && (obj==='periculosidade'||obj==='ambos')) alertas.push('Texto Tópico 3 — Periculosidade não cadastrado');
+  if (!TEXTOS[`topico3_ins`] && (obj==='insalubridade'||obj==='ambos'||obj==='insalubridade_periculosidade')) alertas.push('Texto Tópico 3 — Insalubridade não cadastrado');
+  if (!TEXTOS[`topico3_peri`] && (obj==='periculosidade'||obj==='ambos'||obj==='insalubridade_periculosidade')) alertas.push('Texto Tópico 3 — Periculosidade não cadastrado');
   agentes.forEach(ag => {
     const sid = AGENTE_ID_MAP[ag.id];
     if (sid && !TEXTOS[`${sid}_met`]) alertas.push(`Metodologia (tóp. 8) não cadastrada: ${ag.nome||ag.id}`);
@@ -756,9 +757,24 @@ function gerarPrevia() {
 // ═══════════════════════════════════════════
 // MONTAR HTML DO LAUDO
 // ═══════════════════════════════════════════
+
+// Converte o objeto completo (insalubridade/periculosidade/ambos/ergonomia)
+// para a chave curta usada no cadastro de textos padrão (ins/peri/ambos/erg)
+function objVariante(obj) {
+  const MAP = {
+    'insalubridade': 'ins',
+    'periculosidade': 'peri',
+    'insalubridade_periculosidade': 'ambos',
+    'ambos': 'ambos',
+    'ergonomia': 'erg',
+  };
+  return MAP[obj] || 'ins';
+}
+
 function montarLaudoHTML(p) {
   const d = p.diligencia || {};
   const obj = p.objeto || 'insalubridade';
+  const objVar = objVariante(obj);
   const agentes = (d.agentes || []);
   const agIns  = agentes.filter(a => (AGENTES_MAP[a.id]?.tipo||'ins') === 'ins');
   const agPeri = agentes.filter(a => (AGENTES_MAP[a.id]?.tipo||'ins') === 'peri');
@@ -800,8 +816,8 @@ function montarLaudoHTML(p) {
   </div>`;
 
   // ── TÓPICO 1 ──
-  html += titulo(1, obj==='insalubridade' ? 'OBJETO DA PERÍCIA' : obj==='periculosidade' ? 'OBJETO DA PERÍCIA' : 'OBJETO DA PERÍCIA');
-  html += subs(TEXTOS[`topico1_${obj}`] || `<p><var>{{TEXTO_TOPICO1_${obj.toUpperCase()}}}</var></p>`);
+  html += titulo(1, 'OBJETO DA PERÍCIA');
+  html += subs(TEXTOS[`topico1_${objVar}`] || `<p><var>{{TEXTO_TOPICO1_${obj.toUpperCase()}}}</var></p>`);
 
   // ── TÓPICO 2 ──
   html += titulo(2, 'DILIGÊNCIA E FONTES DE INFORMAÇÃO');
@@ -810,15 +826,15 @@ function montarLaudoHTML(p) {
   // Tabela pela reclamante
   if ((d.partes_reclamante||[]).length) {
     html += `<div style="font-size:11pt;font-weight:700;margin:10px 0 4px;text-align:center;">P E L A &nbsp; R E C L A M A N T E</div>
-    <table class="tabela-partes"><thead><tr><th>Nome</th><th>Qualidade</th></tr></thead><tbody>
-    ${(d.partes_reclamante||[]).map(pt=>`<tr><td>${esc(pt.nome)}</td><td>${esc(pt.mister)}</td></tr>`).join('')}
+    <table class="tabela-partes"><thead><tr><th>Nome</th><th>Qualidade</th><th>Documento</th></tr></thead><tbody>
+    ${(d.partes_reclamante||[]).map(pt=>`<tr><td>${esc(pt.nome)}</td><td>${esc(pt.mister)}</td><td>${esc(pt.documento)||'—'}</td></tr>`).join('')}
     </tbody></table>`;
   }
   // Tabela pela reclamada
   if ((d.partes_reclamada||[]).length) {
     html += `<div style="font-size:11pt;font-weight:700;margin:10px 0 4px;text-align:center;">P E L A &nbsp; R E C L A M A D A</div>
-    <table class="tabela-partes"><thead><tr><th>Nome</th><th>Qualidade</th><th>Admissão</th></tr></thead><tbody>
-    ${(d.partes_reclamada||[]).map(pt=>`<tr><td>${esc(pt.nome)}</td><td>${esc(pt.mister)}</td><td>${esc(pt.admissao)}</td></tr>`).join('')}
+    <table class="tabela-partes"><thead><tr><th>Nome</th><th>Qualidade</th><th>Documento</th><th>Admissão</th></tr></thead><tbody>
+    ${(d.partes_reclamada||[]).map(pt=>`<tr><td>${esc(pt.nome)}</td><td>${esc(pt.mister)}</td><td>${esc(pt.documento)||'—'}</td><td>${esc(pt.admissao)||'—'}</td></tr>`).join('')}
     </tbody></table>`;
   }
 
@@ -832,13 +848,13 @@ function montarLaudoHTML(p) {
 
   // ── TÓPICO 3 ──
   html += titulo(3, 'LEGISLAÇÃO APLICADA');
-  if (obj === 'ambos') {
+  if (obj === 'ambos' || obj === 'insalubridade_periculosidade') {
     html += subtitulo('3.1', 'INSALUBRIDADE');
     html += subs(TEXTOS['topico3_ins'] || '<p><var>{{TEXTO_TOPICO3_INS}}</var></p>');
     html += subtitulo('3.2', 'PERICULOSIDADE');
     html += subs(TEXTOS['topico3_peri'] || '<p><var>{{TEXTO_TOPICO3_PERI}}</var></p>');
   } else {
-    html += subs(TEXTOS[`topico3_${obj}`] || `<p><var>{{TEXTO_TOPICO3_${obj.toUpperCase()}}}</var></p>`);
+    html += subs(TEXTOS[`topico3_${objVar}`] || `<p><var>{{TEXTO_TOPICO3_${obj.toUpperCase()}}}</var></p>`);
   }
 
   // ── TÓPICO 4 ──
@@ -872,7 +888,7 @@ function montarLaudoHTML(p) {
 
   // ── TÓPICO 7 ──
   html += titulo(7, 'IDENTIFICAÇÃO DA PRESENÇA DE AGENTES INSALUBRES E/OU PERIGOSOS');
-  html += subs(TEXTOS[`topico7_intro_${obj}`] || TEXTOS['topico7_intro_ambos'] || '<p><var>{{TEXTO_TOPICO7_INTRO}}</var></p>');
+  html += subs(TEXTOS[`topico7_intro_${objVar}`] || TEXTOS['topico7_intro_ambos'] || '<p><var>{{TEXTO_TOPICO7_INTRO}}</var></p>');
 
   // Bloco de imagens/cards dos agentes
   if (agentes.length) {
