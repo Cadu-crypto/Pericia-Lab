@@ -906,31 +906,40 @@ async function estaOnline() {
   // Cache de 15s
   if (Date.now() - _onlineTs < 15000 && _onlineCache !== null) return _onlineCache;
 
-  // Safari iOS: navigator.onLine é razoavelmente confiável quando false
-  if (!navigator.onLine) {
-    _onlineCache = false;
-    _onlineTs = Date.now();
-    return false;
+  // NÃO confiar em navigator.onLine: no Safari/PWA iOS ele fica "travado" em
+  // false após o app voltar de segundo plano, trocar Wi-Fi↔dados móveis ou
+  // o iPad acordar do sleep — mesmo com internet funcionando normalmente.
+  // Único jeito confiável é testar a rede de verdade.
+  const checarRede = async () => {
+    try {
+      const anon = 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
+      const r = await fetch(
+        'https://vzxcmxxqbqcjyherbztz.supabase.co/auth/v1/settings',
+        {
+          method: 'GET',
+          headers: { 'apikey': anon },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(6000),
+        }
+      );
+      return r.status < 500;
+    } catch {
+      return false;
+    }
+  };
+
+  let ok = await checarRede();
+
+  // Se falhou, o rádio de rede pode só estar "acordando" (comum após
+  // background/sleep no iOS) — tenta mais uma vez antes de declarar offline
+  if (!ok) {
+    await new Promise(res => setTimeout(res, 1200));
+    ok = await checarRede();
   }
 
-  // Tenta auth do Supabase — endpoint que aceita CORS sem token
-  try {
-    const anon = 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
-    const r = await fetch(
-      'https://vzxcmxxqbqcjyherbztz.supabase.co/auth/v1/settings',
-      {
-        method: 'GET',
-        headers: { 'apikey': anon },
-        signal: AbortSignal.timeout(5000),
-      }
-    );
-    _onlineCache = r.status < 500;
-  } catch {
-    _onlineCache = false;
-  }
-
+  _onlineCache = ok;
   _onlineTs = Date.now();
-  return _onlineCache;
+  return ok;
 }
 
 function invalidarCacheOnline() {
