@@ -1,5 +1,5 @@
 // PeríciaLab — Service Worker
-const CACHE_VERSION = 'pericia-v3';
+const CACHE_VERSION = 'pericia-v4';
 
 const ARQUIVOS_CACHE = [
   '/Pericia-Lab/app-ipad-pericia.html',
@@ -37,7 +37,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── FETCH: serve do cache quando offline ─────────────────────
+// ── FETCH: rede primeiro, cache só como fallback (offline de verdade) ────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -54,20 +54,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Arquivos do app: cache primeiro, rede como fallback
+  // Arquivos do app: tenta a rede primeiro para sempre pegar a versão mais
+  // nova quando há internet. Só cai pro cache se a rede falhar de verdade
+  // (offline real) — antes era "cache primeiro", que fazia o app nunca
+  // buscar atualizações depois da primeira instalação.
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      // Não está no cache — tenta a rede e cacheia para próxima vez
-      return fetch(event.request).then(response => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => {
-        // Completamente offline e não estava no cache
-        return new Response('App offline — arquivo não encontrado no cache.', {
+    fetch(event.request).then(response => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+      }
+      return response;
+    }).catch(() => {
+      return caches.match(event.request).then(cached => {
+        return cached || new Response('App offline — arquivo não encontrado no cache.', {
           status: 503,
           headers: { 'Content-Type': 'text/plain' },
         });
