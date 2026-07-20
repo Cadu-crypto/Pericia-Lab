@@ -1,5 +1,5 @@
 // PeríciaLab — Service Worker
-const CACHE_VERSION = 'pericia-v4';
+const CACHE_VERSION = 'pericia-v5';
 
 const ARQUIVOS_CACHE = [
   '/Pericia-Lab/app-ipad-pericia.html',
@@ -39,9 +39,16 @@ self.addEventListener('activate', event => {
 
 // ── FETCH: rede primeiro, cache só como fallback (offline de verdade) ────
 self.addEventListener('fetch', event => {
+  // Só intercepta GET. Requisições com corpo (POST de login, salvar
+  // diligência, refresh de token etc.) sempre vão direto pra rede sem
+  // passar pelo Service Worker — isso não pode ser cacheado mesmo, e
+  // interceptar POST com respondWith(fetch(event.request)) é o que causava
+  // o erro "Load failed" no Safari/iOS ao tentar entrar no app.
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // Requisições ao Supabase: sempre vai para a rede (sync em background)
+  // Requisições GET ao Supabase: sempre vai para a rede (sync em background)
   if (url.hostname.includes('supabase.co')) {
     event.respondWith(
       fetch(event.request).catch(() => {
