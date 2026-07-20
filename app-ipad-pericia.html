@@ -899,47 +899,27 @@ const STEP_LABELS = ['Partes presentes','Dados funcionais','Atividades e EPIs','
 // navigator.onLine é não confiável no iOS PWA
 // Verificação de conexão — compatível com Safari iOS PWA
 // ═══════════════════════════════════════════
+// Verificação de conexão — simplificada
+// Não bloqueia mais o sync, só atualiza o badge visual
 let _onlineCache = null;
 let _onlineTs    = 0;
 
 async function estaOnline() {
-  // Cache de 15s
-  if (Date.now() - _onlineTs < 15000 && _onlineCache !== null) return _onlineCache;
+  // Cache de 20s
+  if (Date.now() - _onlineTs < 20000 && _onlineCache !== null) return _onlineCache;
 
-  // NÃO confiar em navigator.onLine: no Safari/PWA iOS ele fica "travado" em
-  // false após o app voltar de segundo plano, trocar Wi-Fi↔dados móveis ou
-  // o iPad acordar do sleep — mesmo com internet funcionando normalmente.
-  // Único jeito confiável é testar a rede de verdade.
-  const checarRede = async () => {
-    try {
-      const anon = 'sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn';
-      const r = await fetch(
-        'https://vzxcmxxqbqcjyherbztz.supabase.co/auth/v1/settings',
-        {
-          method: 'GET',
-          headers: { 'apikey': anon },
-          cache: 'no-store',
-          signal: AbortSignal.timeout(6000),
-        }
-      );
-      return r.status < 500;
-    } catch {
-      return false;
-    }
-  };
-
-  let ok = await checarRede();
-
-  // Se falhou, o rádio de rede pode só estar "acordando" (comum após
-  // background/sleep no iOS) — tenta mais uma vez antes de declarar offline
-  if (!ok) {
-    await new Promise(res => setTimeout(res, 1200));
-    ok = await checarRede();
+  // Se navigator.onLine diz false com certeza → offline
+  if (!navigator.onLine) {
+    _onlineCache = false;
+    _onlineTs = Date.now();
+    return false;
   }
 
-  _onlineCache = ok;
+  // Assume online — a verificação real acontece quando tenta sync
+  // Evitamos fetch de diagnóstico que falha por CORS no Safari iOS
+  _onlineCache = true;
   _onlineTs = Date.now();
-  return ok;
+  return true;
 }
 
 function invalidarCacheOnline() {
@@ -993,11 +973,8 @@ async function init() {
   watchOnline();
 
   // Se IndexedDB vazio E tem rede → baixa do Supabase automaticamente
-  if (pericias.length === 0) {
-    const on = await estaOnline();
-    if (on) {
-      await baixarPericiasSuabase();
-    }
+  if (pericias.length === 0 && navigator.onLine) {
+    await baixarPericiasSuabase();
   }
 }
 
@@ -1115,44 +1092,36 @@ function watchOnline() {
   const btnLogin = () => document.getElementById('btn-topbar-login');
 
   async function update() {
-    invalidarCacheOnline();
-    const on = await estaOnline();
+    // Usa apenas navigator.onLine — simples e sem fetch que falha no iOS
+    const on = navigator.onLine;
 
     if (!on) {
-      // SEM INTERNET — funciona normalmente com dados locais
-      // Não pede login, não bloqueia nada
       badge().className = 'sync-badge offline';
       txtEl().textContent = 'Offline';
       if (btnLogin()) btnLogin().style.display = 'none';
       return;
     }
 
-    // TEM INTERNET — tenta renovar token para habilitar sync
+    // navigator.onLine = true → tenta renovar token e sincronizar
     badge().className = 'sync-badge online';
-    txtEl().textContent = 'Conectando...';
+    txtEl().textContent = 'Online';
 
     const tokenOk = await renovarTokenSeNecessario();
     if (tokenOk) {
-      // Online com token válido — sync automático
-      txtEl().textContent = 'Online';
       if (btnLogin()) btnLogin().style.display = 'none';
       syncToCloud();
     } else {
-      // Online mas token expirado — mostra aviso e botão de login
-      // App continua funcionando normalmente, só sync que não roda
       txtEl().textContent = 'Login p/ sync';
       badge().className = 'sync-badge offline';
       if (btnLogin()) btnLogin().style.display = 'block';
     }
   }
 
-  // Eventos nativos de rede
-  window.addEventListener('online',  () => { invalidarCacheOnline(); update(); });
-  window.addEventListener('offline', () => { invalidarCacheOnline(); update(); });
+  window.addEventListener('online',  () => update());
+  window.addEventListener('offline', () => update());
 
-  // Verifica a cada 30s
-  setInterval(update, 30000);
-
+  // Verifica a cada 60s
+  setInterval(update, 60000);
   update();
 }
 
@@ -1764,7 +1733,7 @@ async function salvarDiligencia() {
   toast('✓ Diligência salva com sucesso!');
   setTimeout(() => { renderLista(); goTo('screen-lista'); }, 1200);
 
-  estaOnline().then(on => { if (on) syncToCloud(); });
+  if (navigator.onLine) syncToCloud();
 }
 
 // ═══════════════════════════════════════════
@@ -1891,7 +1860,7 @@ async function syncToCloud(forceTudo = false) {
   if (badge && txt) {
     badge.className = 'sync-badge online';
     txt.textContent = `Sincronizado (${enviados})`;
-    setTimeout(() => { estaOnline().then(on => { if (on && txt) txt.textContent = 'Online'; }); }, 3000);
+    setTimeout(() => { if (navigator.onLine && txt) txt.textContent = 'Online'; }, 3000);
   }
   console.log(`[Sync] ${enviados} diligência(s) sincronizada(s).`);
   return enviados;
@@ -1899,10 +1868,6 @@ async function syncToCloud(forceTudo = false) {
 
 async function syncManual() {
   const btn = document.getElementById('btn-sync-manual');
-  const on = await estaOnline();
-  if (!on) {
-    toast('Sem internet — não é possível sincronizar agora.'); return;
-  }
   if (btn) { btn.textContent = '⟳ Sync...'; btn.disabled = true; }
 
   try {
@@ -1910,8 +1875,13 @@ async function syncManual() {
     toast(total > 0
       ? `✓ ${total} diligência${total > 1 ? 's' : ''} enviada${total > 1 ? 's' : ''} ao servidor!`
       : '✓ Tudo já estava sincronizado.');
+    // Atualiza badge para Online após sucesso
+    const b = document.getElementById('sync-badge');
+    const t = document.getElementById('sync-text');
+    if (b) b.className = 'sync-badge online';
+    if (t) t.textContent = 'Online';
   } catch(e) {
-    toast('Erro: ' + e.message);
+    toast('Erro ao sincronizar: ' + e.message);
     console.error('[Sync]', e);
   }
   if (btn) { btn.textContent = '↑ Sync'; btn.disabled = false; }
