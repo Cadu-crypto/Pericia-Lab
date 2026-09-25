@@ -1,9 +1,13 @@
 name: Keep Supabase Alive
 
+# Faz uma consulta real ao banco 2x por semana para o Supabase não
+# considerar o projeto "inativo" e pausar de novo (pausa automática
+# do plano free acontece após 7 dias sem atividade no banco).
+
 on:
   schedule:
     - cron: '0 12 * * 1,4'   # toda segunda e quinta, 12:00 UTC
-  workflow_dispatch:
+  workflow_dispatch:          # permite rodar manualmente pela aba Actions
 
 jobs:
   ping:
@@ -12,5 +16,6 @@ jobs:
       - name: Ping Supabase (consulta real ao banco)
         run: |
           curl -s -o /dev/null -w "Status: %{http_code}\n" \
+            --retry 5 --retry-delay 15 --retry-all-errors \
             "https://vzxcmxxqbqcjyherbztz.supabase.co/rest/v1/processos?select=id&limit=1" \
             -H "apikey: sb_publishable_qKeZW-KS6GLo6H3Z2kZgNg_92iqy4Pn"
