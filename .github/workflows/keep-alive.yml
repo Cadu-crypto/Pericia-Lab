@@ -1,13 +1,14 @@
 name: Keep Supabase Alive
 
-# Faz uma consulta real ao banco 2x por semana para o Supabase não
+# Faz uma consulta real ao banco 2x por dia para o Supabase não
 # considerar o projeto "inativo" e pausar de novo (pausa automática
 # do plano free acontece após 7 dias sem atividade no banco).
 
 on:
   schedule:
-    - cron: '0 12 * * 1,4'   # toda segunda e quinta, 12:00 UTC
-  workflow_dispatch:          # permite rodar manualmente pela aba Actions
+    - cron: '0 12 * * *'   # todo dia, 12:00 UTC
+    - cron: '0 0 * * *'    # todo dia, 00:00 UTC
+  workflow_dispatch:        # permite rodar manualmente pela aba Actions
 
 jobs:
   ping:
